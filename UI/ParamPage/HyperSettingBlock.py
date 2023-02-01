@@ -43,8 +43,8 @@ class HyperSettingBlock(QWidget):
         self.gridLayout.setContentsMargins(0, 0, 0, 0)
         self.gridLayout.setHorizontalSpacing(7)
 
-        self.gridLayout_wrapper = QFrame()
-        self.gridLayout_wrapper.setLayout(self.gridLayout)
+        # self.gridLayout_wrapper = QFrame()
+        # self.gridLayout_wrapper.setLayout(self.gridLayout)
 
         title_wraper = QHBoxLayout()
         self.label_title = QLabel("Hyper Parameters")
@@ -70,7 +70,7 @@ class HyperSettingBlock(QWidget):
         VLayout.addWidget(self.init_param_selector)
         VLayout.addWidget(self.method_intro)
 
-        VLayout.addWidget(self.gridLayout_wrapper)
+        VLayout.addLayout(self.gridLayout)
 
         self.set_idx(0)
 
@@ -79,14 +79,21 @@ class HyperSettingBlock(QWidget):
         if(b):
             # global
             self.label_title.show()
-            self.gridLayout_wrapper.show()
+            # self.gridLayout_wrapper.show()
+            self.lineEdits_hyper_setting[0].show()
+            self.lineEdits_hyper_setting[1].show()
+            self.lineEdits_hyper_setting[2].show()
 
             # local
             self.init_param_selector.hide()
+            
         else:
             # global
             self.label_title.hide()
-            self.gridLayout_wrapper.hide()
+            # self.gridLayout_wrapper.hide()
+            self.lineEdits_hyper_setting[0].hide()
+            self.lineEdits_hyper_setting[1].hide()
+            self.lineEdits_hyper_setting[2].show()
 
             # local
             self.init_param_selector.show()

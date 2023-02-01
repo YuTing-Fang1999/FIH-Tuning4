@@ -349,7 +349,7 @@ class MainWindow_controller(QMainWindow):
     def set_btn_enable(self, case):
         if case=="run":
             self.ui.project_page.set_btn_enable(False)
-            self.ui.ROI_page.btn_capture.setEnabled(False)
+            self.ui.ROI_page.set_btn_enable(False)
             self.ui.param_page.push_and_save_block.set_btn_enable(False)
         
         elif case=="push" or case=="capture":
@@ -415,10 +415,12 @@ class MainWindow_controller(QMainWindow):
         if 'saved_img_name' in self.setting:
             self.ui.param_page.push_and_save_block.lineEdits_img_name.setText(self.setting['saved_img_name'] )
 
-        if self.setting['method'] == "local search":
+        if "method" in self.setting and self.setting['method'] == "local search":
             self.ui.param_page.hyper_setting_block.method_selector.setCurrentIndex(1)
+        else:
+            self.ui.param_page.hyper_setting_block.method_selector.setCurrentIndex(0)
 
-        if self.setting['init_param'] == "使用目前gain的參數":
+        if "method" in self.setting and self.setting['init_param'] == "使用目前gain的參數":
             self.ui.param_page.hyper_setting_block.init_param_selector.setCurrentIndex(1)
         
     
@@ -472,10 +474,16 @@ class MainWindow_controller(QMainWindow):
                         key_data["coustom_range"].append(json.loads(lineEdit.text()))
 
         for i, name in enumerate(self.ui.param_page.hyper_setting_block.hyper_param_name):
-            if self.ui.param_page.hyper_setting_block.lineEdits_hyper_setting[i].text()=="":
-                self.setting[name] = ""
-            else:
-                self.setting[name] = int(self.ui.param_page.hyper_setting_block.lineEdits_hyper_setting[i].text())
+            print(self.ui.param_page.hyper_setting_block.lineEdits_hyper_setting[i].isVisibleTo(self.ui.param_page))
+            if self.ui.param_page.hyper_setting_block.lineEdits_hyper_setting[i].isVisibleTo(self.ui.param_page):
+                if self.ui.param_page.hyper_setting_block.lineEdits_hyper_setting[i].text()=="":
+                    if alert:
+                        self.alert_info("「參數設定」頁面的超參數的部分未填", "「參數設定」頁面的超參數的部分未填")
+                        return False
+                    else:
+                        self.setting[name] = ""
+                else:
+                    self.setting[name] = int(self.ui.param_page.hyper_setting_block.lineEdits_hyper_setting[i].text())
         
         self.setting['saved_dir_name'] = self.ui.param_page.push_and_save_block.lineEdits_dir_name.text()
         self.setting['saved_img_name'] = self.ui.param_page.push_and_save_block.lineEdits_img_name.text()

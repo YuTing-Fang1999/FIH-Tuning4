@@ -93,11 +93,7 @@ class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
         self.bin_name = self.setting["bin_name"]
 
         # hyperparams
-        self.popsize = self.setting['population size']
-        self.generations = self.setting['generations']
         self.capture_num = self.setting['capture num']
-        self.F = 0.7
-        self.Cr = 0.5
         
         self.bounds = []
         col = sum(self.key_config["col"], [])
@@ -136,13 +132,6 @@ class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
         self.min_b = self.min_b[self.param_change_idx]
         self.max_b = self.max_b[self.param_change_idx]
         self.diff = np.fabs(self.min_b - self.max_b)
-
-
-        self.pop = np.random.random((self.popsize, self.param_change_num))
-        self.pop = self.min_b + self.pop * self.diff #denorm
-        self.pop = self.round_nearest(self.pop)
-        # self.log_info_signal.emit(str(self.pop))
-        self.pop = ((self.pop-self.min_b)/self.diff) #norm
         
         # score
         self.best_score = 1e9
@@ -184,8 +173,10 @@ class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
         self.setup()
         print(self.setting["method"])
         if self.setting["method"] == "glabel search":
+            self.setup_param_window_signal.emit(self.popsize, self.param_change_num, self.target_type)
             self.DE()
         elif self.setting["method"] == "local search":
+            self.setup_param_window_signal.emit(self.param_change_num+1, self.param_change_num, self.target_type)
             self.Nelder_Mead()
         
         self.finish_signal.emit()
@@ -193,6 +184,19 @@ class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
     def DE(self):
         # test mode 下沒改動的地方為0
         if self.TEST_MODE: self.param_value = np.zeros(self.dimensions)
+        # hyperparams
+        self.popsize = self.setting['population size']
+        self.generations = self.setting['generations']
+        self.capture_num = self.setting['capture num']
+        self.F = 0.7
+        self.Cr = 0.5
+
+        self.pop = np.random.random((self.popsize, self.param_change_num))
+        self.pop = self.min_b + self.pop * self.diff #denorm
+        self.pop = self.round_nearest(self.pop)
+        # self.log_info_signal.emit(str(self.pop))
+        self.pop = ((self.pop-self.min_b)/self.diff) #norm
+
         self.initial_individual()
 
         # Do Differential Evolution
@@ -246,7 +250,7 @@ class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
         # simplex iter
         iters = 0
         while 1:
-            self.set_generation_signal.emit(str(iter))
+            self.set_generation_signal.emit(str(iters))
             self.log_info_signal.emit(str(iters))
             # order
             res.sort(key=lambda x: x[1])
@@ -677,8 +681,6 @@ class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
         self.set_generation_signal.emit("#")
         self.set_individual_signal.emit("#")
 
-        self.setup_param_window_signal.emit(self.popsize, self.param_change_num, self.target_type)
-
     # Ackley
     # objective function
     def fobj(self, X):
@@ -714,8 +716,8 @@ class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
         self.show_info_by_key(["coustom_range","param_change_idx"], key_data)
         self.tab_info.show_info("{}: {}".format("param_value", self.param_value))
 
-        self.tab_info.show_info("\n###### Mode ######")
-        self.show_info_by_key(["TEST_MODE","PRETRAIN","TRAIN"], self.setting)
+        # self.tab_info.show_info("\n###### Mode ######")
+        # self.show_info_by_key(["TEST_MODE","PRETRAIN","TRAIN"], self.setting)
 
         self.tab_info.show_info("\n###### Project Setting ######")
         self.show_info_by_key(["platform", "project_path", "exe_path", "bin_name"], self.setting)
