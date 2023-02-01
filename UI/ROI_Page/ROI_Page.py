@@ -32,8 +32,9 @@ class DeleteBtn(QPushButton):
             row = self.table.indexAt(button.pos()).row()
             self.table.removeRow(row)
             # print("del row", row)
-            self.page.rois.pop(row)
-            self.page.draw_ROI(self.page.rois)
+            self.page.target_rois.pop(row)
+            self.page.my_rois.pop(row)
+            self.page.draw_ROI(self.page.my_rois)
 
 class ROI_Page(QWidget):
     alert_info_signal = pyqtSignal(str, str)
@@ -41,8 +42,10 @@ class ROI_Page(QWidget):
 
     def __init__(self):
         super().__init__()
+        self.target_filepath = "./"
         self.filefolder="./"
-        self.rois = []
+        self.target_rois = []
+        self.my_rois = []
 
         self.setup_UI()
         self.setup_controller()
@@ -60,11 +63,6 @@ class ROI_Page(QWidget):
         self.headers = ["type", "IQM", "weight", "刪除紐"]
         self.table.setColumnCount(len(self.headers))   ##设置列数
         self.table.setHorizontalHeaderLabels(self.headers)
-        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
-        # self.table.verticalHeader().setVisible(False)
-        # self.table.setVerticalHeaderLabels(QLabel("id"))
-        QTableWidget.resizeRowsToContents(self.table)
-
 
         self.btn_capture = QPushButton()
         self.btn_capture.setText("拍攝照片")
@@ -74,7 +72,7 @@ class ROI_Page(QWidget):
         self.btn_gen_ref.setText("產生參考照片")
         self.btn_gen_ref.setToolTip("使用十張連拍做多幀降造產生目標照片")
 
-        self.btn_load_target_pic = QPushButton("Load Target PIC")
+        self.btn_load_target_pic = QPushButton("Load 目標照片")
         self.btn_load_target_pic.setToolTip("選擇目標照片")
 
         self.btn_add_ROI_item = QPushButton()
@@ -133,12 +131,13 @@ class ROI_Page(QWidget):
     def select_ROI(self, my_x_y_w_h, target_x_y_w_h, target_filepath):
         self.measure_window.measure_target(my_x_y_w_h, target_x_y_w_h, target_filepath)
 
-    def set_target_score(self, my_x_y_w_h, target_type, target_score):
+    def set_target_score(self, my_x_y_w_h, target_x_y_w_h, target_type, target_score):
         
         for i in range(len(target_type)):
             self.add_to_table(target_type[i], target_score[i], 1)
-            self.rois.append(my_x_y_w_h)
-            self.draw_ROI(self.rois)
+            self.target_rois.append(target_x_y_w_h)
+            self.my_rois.append(my_x_y_w_h)
+            self.draw_ROI(self.my_rois)
 
     def add_to_table(self, target_type, target_score, target_weight):
 
@@ -154,6 +153,9 @@ class ROI_Page(QWidget):
         self.table.setCellWidget(row,2,QLineEdit(str(target_weight)))
 
         self.table.setCellWidget(row,3,DeleteBtn(self.table, self))
+
+        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+        self.table.horizontalHeader().setStretchLastSection(True)
     
     def add_ROI_item_click(self):
         if len(self.ROI_select_window.my_viewer.img)==0:
@@ -189,23 +191,25 @@ class ROI_Page(QWidget):
         )
 
         if filepath == '': return
+        self.set_target_img(filepath)
 
+    def set_target_img(self, filepath):
         self.filefolder = '/'.join(filepath.split('/')[:-1])
         self.filename = filepath.split('/')[-1]
-
-        self.btn_load_target_pic.setText("Load Target PIC ({})".format(self.filename))
+        self.btn_load_target_pic.setText("Load 目標照片 ({})".format(self.filename))
         
         # load img
         img = cv2.imdecode(np.fromfile(file=filepath, dtype=np.uint8), cv2.IMREAD_COLOR)
         self.ROI_select_window.target_viewer.set_img(img)
         self.ROI_select_window.filepath = filepath
+        self.target_filepath = filepath
         
     def set_photo(self, img_name):
         img = cv2.imread(img_name)
         self.img = img
         self.label_img.setPhoto(img)
         self.ROI_select_window.my_viewer.set_img(img)
-        self.draw_ROI(self.rois)
+        self.draw_ROI(self.my_rois)
 
     def set_btn_enable(self, b):
         self.btn_capture.setEnabled(b)

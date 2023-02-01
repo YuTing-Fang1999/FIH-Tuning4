@@ -391,14 +391,20 @@ class MainWindow_controller(QMainWindow):
         ##### ROI_page #####
         if os.path.exists('./capture.jpg'):
             self.ui.ROI_page.set_photo('./capture.jpg')
-            if "roi" in setting:
-                self.ui.ROI_page.rois = setting["roi"]
-                self.ui.ROI_page.draw_ROI(self.ui.ROI_page.rois)
+            if "my_rois" in setting:
+                self.ui.ROI_page.target_rois = setting["target_rois"]
+                self.ui.ROI_page.my_rois = setting["my_rois"]
+                self.ui.ROI_page.draw_ROI(self.ui.ROI_page.my_rois)
 
         if 'target_type' in setting and len(setting["target_type"])>0:
-            assert len(setting["roi"]) == len(setting["target_type"])
+            assert len(setting["my_rois"]) == len(setting["target_type"])
             for i in range(len(setting["target_type"])):
                 self.ui.ROI_page.add_to_table(setting["target_type"][i], setting["target_score"][i], setting["target_weight"][i])
+        
+        if "target_filepath" in self.setting:
+            if os.path.exists(self.setting["target_filepath"]):
+                self.ui.ROI_page.target_filepath = self.setting["target_filepath"]
+                self.ui.ROI_page.set_target_img(self.setting["target_filepath"])
 
         ##### param_page #####
         if "root" in self.setting:
@@ -434,9 +440,11 @@ class MainWindow_controller(QMainWindow):
         self.setting["bin_name"] = self.ui.project_page.lineEdits_bin_name.text()
 
         ##### ROI_page #####
-        self.setting["roi"] = self.ui.ROI_page.rois
+        self.setting["target_filepath"] = self.ui.ROI_page.target_filepath
+        self.setting["target_rois"] = self.ui.ROI_page.target_rois
+        self.setting["my_rois"] = self.ui.ROI_page.my_rois
+        assert len(self.setting["my_rois"]) == self.ui.ROI_page.table.rowCount()
 
-        assert len(self.setting["roi"]) == self.ui.ROI_page.table.rowCount()
         self.setting["target_type"] = []
         self.setting["target_score"] = []
         self.setting["target_weight"] = []

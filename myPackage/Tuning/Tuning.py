@@ -53,7 +53,7 @@ class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
         self.capture = capture
 
         self.is_run = False
-        self.TEST_MODE = True
+        self.TEST_MODE = False
         self.is_rule = False
         if self.is_rule:
             # 退火
@@ -110,6 +110,10 @@ class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
         self.trigger_idx = self.setting["trigger_idx"]
         self.trigger_name = self.setting["trigger_name"]
 
+        # target region
+        self.my_roi = self.setting['my_rois']
+        self.target_roi = self.setting['target_rois']
+
         # target score
         if self.TEST_MODE:
             self.setting["target_type"]=["TEST", "TEST2", "TEST3"]
@@ -121,9 +125,6 @@ class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
         self.weight_IQM = np.array(self.setting["target_weight"])
         self.target_num = len(self.target_type)
         self.std_IQM = np.ones(self.target_num)
-
-        # target region
-        self.roi = self.setting['roi']
 
         # get the bounds of each parameter
         self.min_b, self.max_b = np.asarray(self.bounds).T
@@ -142,6 +143,13 @@ class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
             self.finish_signal.emit()
             return
 
+        if os.path.exists("target_ROI"): shutil.rmtree("target_ROI")
+        self.mkdir("target_ROI")
+        target_img = cv2.imdecode(np.fromfile(file=self.setting["target_filepath"], dtype=np.uint8), cv2.IMREAD_COLOR)
+        for i, target_x_y_w_h in enumerate(self.target_roi):
+            x, y, w, h = target_x_y_w_h
+            cv2.imwrite("target_ROI/{}.jpg".format(i+1), target_img[y: y+h, x:x+w])
+        
         # csv data
         title = ["name", "score"]
         for t in self.target_type: title.append(t)
@@ -693,7 +701,7 @@ class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
 
     def calIQM(self, img):
         now_IQM=[]
-        for i, roi in enumerate(self.roi):
+        for i, roi in enumerate(self.my_roi):
             if len(roi)==0: continue
             x, y, w, h = roi
             roi_img = img[y: y+h, x:x+w]

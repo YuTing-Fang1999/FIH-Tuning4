@@ -66,8 +66,6 @@ def get_perceptual_distance(img0, img1):
     img0 = lpips.im2tensor(img0) # RGB image from [-1,1]
     img1 = lpips.im2tensor(img1)
 
-    print(img0)
-
     if(torch.cuda.is_available()):
         img0 = img0.cuda()
         img1 = img1.cuda()
