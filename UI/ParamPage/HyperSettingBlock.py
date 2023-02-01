@@ -11,7 +11,7 @@ class MethodSelector(QComboBox):
 
         self.setStyleSheet("font-size:12pt; font-family:微軟正黑體; background-color: rgb(255, 255, 255);")
 
-        item_names = ["glabel search", "local search"]
+        item_names = ["global search", "local search"]
         self.clear()
         self.addItems(item_names) # -> set_trigger_idx 0
 
@@ -51,7 +51,7 @@ class HyperSettingBlock(QWidget):
         self.label_title.setStyleSheet("background-color:rgb(72, 72, 72);")
         title_wraper.addWidget(self.label_title)
 
-        self.hyper_param_name = ["population size", "generations", "capture num"] # "F", "Cr", 
+        self.hyper_param_name = ["capture num", "population size", "generations"] # "F", "Cr", 
         tip = ["要初始化幾組參數(不可小於5)\n實際使用建議為10", "總共跑幾輪", "每次計算分數時要拍幾張照片"] # "變異的程度(建議不要超過1)", "替換掉參數的比率(建議不要超過0.5)", 
         self.hyper_param_title = self.hyper_param_name
         for i in range(len(self.hyper_param_name)):
@@ -91,16 +91,16 @@ class HyperSettingBlock(QWidget):
             # global
             self.label_title.hide()
             # self.gridLayout_wrapper.hide()
-            self.lineEdits_hyper_setting[0].hide()
+            self.lineEdits_hyper_setting[0].show()
             self.lineEdits_hyper_setting[1].hide()
-            self.lineEdits_hyper_setting[2].show()
+            self.lineEdits_hyper_setting[2].hide()
 
             # local
             self.init_param_selector.show()
 
     def set_idx(self, idx):
         if idx==0:
-            self.method_intro.setText("glabel search\n使用差分進化演算法\n隨機重新產生")
+            self.method_intro.setText("global search\n使用差分進化演算法\n隨機重新產生")
             self.set_global_section_visiable(True)
         if idx==1:
             self.method_intro.setText("local search\n使用Nelder-Mead Simplex\n可對參數做微調")

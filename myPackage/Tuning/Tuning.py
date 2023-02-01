@@ -53,7 +53,7 @@ class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
         self.capture = capture
 
         self.is_run = False
-        self.TEST_MODE = False
+        self.TEST_MODE = True
         self.is_rule = False
         if self.is_rule:
             # 退火
@@ -125,22 +125,11 @@ class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
         # target region
         self.roi = self.setting['roi']
 
-        
-
         # get the bounds of each parameter
         self.min_b, self.max_b = np.asarray(self.bounds).T
         self.min_b = self.min_b[self.param_change_idx]
         self.max_b = self.max_b[self.param_change_idx]
         self.diff = np.fabs(self.min_b - self.max_b)
-        
-        # score
-        self.best_score = 1e9
-        self.fitness = []  # 計算popsize個individual所產生的影像的分數
-        self.IQMs = []
-
-        # update rate
-        self.update_count=0
-        self.update_rate=0
 
         # 防呆
         if len(self.setting["target_type"])==0:
@@ -191,11 +180,20 @@ class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
         self.F = 0.7
         self.Cr = 0.5
 
+        # score
+        self.best_score = 1e9
+        self.fitness = []  # 計算popsize個individual所產生的影像的分數
+        self.IQMs = []
+
         self.pop = np.random.random((self.popsize, self.param_change_num))
         self.pop = self.min_b + self.pop * self.diff #denorm
         self.pop = self.round_nearest(self.pop)
         # self.log_info_signal.emit(str(self.pop))
         self.pop = ((self.pop-self.min_b)/self.diff) #norm
+
+        # update rate
+        self.update_count=0
+        self.update_rate=0
 
         self.initial_individual()
 
@@ -215,16 +213,18 @@ class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
         sigma=0.5
 
         # init
+        self.IQMs = []
         now_IQM = self.measure_IQM_by_param_value('log/init', self.param_value)
         self.IQMs.append(now_IQM)
         prev_best = self.cal_score_by_weight(now_IQM)
         
         no_improv = 0
         dim = self.param_change_num
-        self.log_info_signal.emit(str(self.param_change_idx))
-        self.log_info_signal.emit(str(self.param_value))
         x_start = (self.param_value[self.param_change_idx]-self.min_b)/self.diff #norm
-        res = [[x_start, prev_best]]
+        self.pop = [x_start]
+        self.fitness = [prev_best]
+        
+        # res = [[x_start, prev_best]]
         self.update_param_window_signal.emit(0, self.param_value[self.param_change_idx], prev_best, now_IQM)
 
         self.set_generation_signal.emit("initialize")
@@ -237,28 +237,38 @@ class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
             score = self.cal_score_by_weight(now_IQM)
             self.log_info_signal.emit('init: {}'.format([x, score]))
             self.update_param_window_signal.emit(i+1, self.param_value[self.param_change_idx], score, now_IQM)
-            res.append([x, score])
+            self.pop.append(x)
+            self.fitness.append(score)
+            # res.append([x, score])
+
+        self.pop = self.min_b + self.pop * self.diff #denorm
+        self.pop = self.round_nearest(self.pop)
+        self.pop = ((self.pop-self.min_b)/self.diff) #norm
 
         # 更新經由標準差後的分數
-        self.std_IQM = np.array(self.IQMs).std(axis=0)
-        fitness = []
-        for i in range(dim+1):
-            res[i][1] = self.cal_score_by_weight(self.IQMs[i])
-            fitness.append(res[i][1])
-        self.update_param_window_scores_signal.emit(fitness)
+        # self.std_IQM = np.array(self.IQMs).std(axis=0)
+
+        # fitness = []
+        # for i in range(dim+1):
+        #     res[i][1] = self.cal_score_by_weight(self.IQMs[i])
+        #     fitness.append(res[i][1])
+        # self.update_param_window_scores_signal.emit(fitness)
 
         # simplex iter
         iters = 0
         while 1:
             self.set_generation_signal.emit(str(iters))
-            self.log_info_signal.emit(str(iters))
+            # self.log_info_signal.emit(str(iters))
             # order
-            res.sort(key=lambda x: x[1])
-            best = res[0][1]
+            # res.sort(key=lambda x: x[1])
+            self.pop, self.fitness = zip(*sorted(zip(self.pop, self.fitness), key=lambda x: x[1]))
+            self.pop = list(self.pop)
+            self.fitness = list(self.fitness)
+            best = self.fitness[0]
 
             # break after max_iter
             if max_iter and iters >= max_iter:
-                return res[0]
+                return self.fitness[0]
             iters += 1
 
             # break after no_improv_break iterations with no improvement
@@ -274,70 +284,104 @@ class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
             if no_improv >= no_improv_break:
                 self.log_info_signal.emit('...best so far: {}'.format(best))
                 self.log_info_signal.emit('stop because no improvement')
-                return res[0]
+                return self.fitness[0]
 
             # centroid
             x0 = [0.] * dim
-            for tup in res[:-1]:
-                for i, c in enumerate(tup[0]):
-                    x0[i] += c / (len(res)-1)
+            for tup in self.pop[:-1]:
+                for i, c in enumerate(tup):
+                    x0[i] += c / (len(self.pop)-1)
 
             # reflection
-            xr = x0 + alpha*(x0 - res[-1][0])
+            xr = x0 + alpha*(x0 - self.pop[-1])
             xr = np.clip(xr, 0, 1)
-            self.param_value[self.param_change_idx] = self.min_b + xr * self.diff #denorm
+
+            xr = self.min_b + xr * self.diff #denorm
+            xr = self.round_nearest(xr)
+            self.param_value[self.param_change_idx] = xr
+            xr = ((xr-self.min_b)/self.diff) #norm
+
             now_IQM = self.measure_IQM_by_param_value('log/iter_{}_reflection'.format(iters), self.param_value)
             rscore = self.cal_score_by_weight(now_IQM)
-            if res[0][1] <= rscore < res[-2][1]:
-                del res[-1]
-                res.append([xr, rscore])
+            if self.fitness[0] <= rscore < self.fitness[-2]:
+                del self.pop[-1]
+                del self.fitness[-1]
+                self.pop.append(xr)
+                self.fitness.append(rscore)
                 self.update_param_window_signal.emit(self.param_change_num, self.param_value[self.param_change_idx], rscore, now_IQM)
                 continue
 
             # expansion
-            if rscore < res[0][1]:
-                xe = x0 + gamma*(x0 - res[-1][0])
+            if rscore < self.fitness[0]:
+                xe = x0 + gamma*(x0 - self.pop[-1])
                 xe = np.clip(xe, 0, 1)
-                self.param_value[self.param_change_idx] = self.min_b + xe * self.diff #denorm
+
+                xe = self.min_b + xe * self.diff #denorm
+                xe = self.round_nearest(xe)
+                self.param_value[self.param_change_idx] = xe
+                xe = ((xe-self.min_b)/self.diff) #norm
+
                 now_IQM = self.measure_IQM_by_param_value('log/iter_{}_expansion'.format(iters), self.param_value)
                 escore = self.cal_score_by_weight(now_IQM)
                 if escore < rscore:
-                    del res[-1]
-                    res.append([xe, escore])
+                    del self.pop[-1]
+                    del self.fitness[-1]
+                    self.pop.append(xe)
+                    self.fitness.append(escore)
+                    # del res[-1]
+                    # res.append([xe, escore])
                     self.update_param_window_signal.emit(self.param_change_num, self.param_value[self.param_change_idx], escore, now_IQM)
                     continue
                 else:
-                    del res[-1]
-                    res.append([xr, rscore])
+                    del self.pop[-1]
+                    del self.fitness[-1]
+                    self.pop.append(xr)
+                    self.fitness.append(rscore)
+                    # del res[-1]
+                    # res.append([xr, rscore])
                     self.update_param_window_signal.emit(self.param_change_num, self.param_value[self.param_change_idx], rscore, now_IQM)
                     continue
 
             # contraction
-            xc = x0 + rho*(x0 - res[-1][0])
+            xc = x0 + rho*(x0 -self.pop[-1])
             xc = np.clip(xc, 0, 1)
-            self.param_value[self.param_change_idx] = self.min_b + xc * self.diff #denorm
+
+            xc = self.min_b + xc * self.diff #denorm
+            xc = self.round_nearest(xc)
+            self.param_value[self.param_change_idx] = xc
+            xc = ((xc-self.min_b)/self.diff) #norm
+
             now_IQM = self.measure_IQM_by_param_value('log/iter_{}_contraction'.format(iters), self.param_value)
             cscore = self.cal_score_by_weight(now_IQM)
-            if cscore < res[-1][1]:
-                del res[-1]
-                res.append([xc, cscore])
+            if cscore < self.fitness[-1]:
+                del self.pop[-1]
+                del self.fitness[-1]
+                self.pop.append(xc)
+                self.fitness.append(cscore)
+                # del res[-1]
+                # res.append([xc, cscore])
                 self.update_param_window_signal.emit(self.param_change_num, self.param_value[self.param_change_idx], cscore, now_IQM)
                 continue
 
             # reduction
-            x1 = res[0][0]
+            x1 = self.pop[0]
             nres = []
-            for tup_i, tup in enumerate(res):
-                redx = x1 + sigma*(tup[0] - x1)
+            for tup_i, tup in enumerate(self.pop[0]):
+                redx = x1 + sigma*(tup - x1)
                 redx = np.clip(redx, 0, 1)
+
+                redx = self.min_b + redx * self.diff #denorm
+                redx = self.round_nearest(redx)
+                self.param_value[self.param_change_idx] = redx
+                redx = ((redx-self.min_b)/self.diff) #norm
+
                 self.param_value[self.param_change_idx] = self.min_b + redx * self.diff #denorm
                 now_IQM = self.measure_IQM_by_param_value('log/iter_{}_reduction_{}'.format(iters, tup_i), self.param_value)
                 score = self.cal_score_by_weight(now_IQM)
                 nres.append([redx, score])
                 self.update_param_window_signal.emit(tup_i, self.param_value[self.param_change_idx], score, now_IQM)
+
             res = nres
-
-
 
     def initial_individual(self):
         if not self.TEST_MODE:

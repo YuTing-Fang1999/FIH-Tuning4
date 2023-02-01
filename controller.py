@@ -415,14 +415,15 @@ class MainWindow_controller(QMainWindow):
         if 'saved_img_name' in self.setting:
             self.ui.param_page.push_and_save_block.lineEdits_img_name.setText(self.setting['saved_img_name'] )
 
-        if "method" in self.setting and self.setting['method'] == "local search":
+        if "method" not in self.setting: self.setting['method'] = "global search"
+        if self.setting['method'] == "local search":
             self.ui.param_page.hyper_setting_block.method_selector.setCurrentIndex(1)
         else:
             self.ui.param_page.hyper_setting_block.method_selector.setCurrentIndex(0)
 
-        if "method" in self.setting and self.setting['init_param'] == "使用目前gain的參數":
+        if "init_param" not in self.setting: self.setting['init_param'] = "使用目前gain的參數"
+        if self.setting['init_param'] == "使用目前gain的參數":
             self.ui.param_page.hyper_setting_block.init_param_selector.setCurrentIndex(1)
-        
     
     def get_UI_data(self, alert=False):
 
@@ -474,11 +475,10 @@ class MainWindow_controller(QMainWindow):
                         key_data["coustom_range"].append(json.loads(lineEdit.text()))
 
         for i, name in enumerate(self.ui.param_page.hyper_setting_block.hyper_param_name):
-            print(self.ui.param_page.hyper_setting_block.lineEdits_hyper_setting[i].isVisibleTo(self.ui.param_page))
             if self.ui.param_page.hyper_setting_block.lineEdits_hyper_setting[i].isVisibleTo(self.ui.param_page):
                 if self.ui.param_page.hyper_setting_block.lineEdits_hyper_setting[i].text()=="":
                     if alert:
-                        self.alert_info("「參數設定」頁面的超參數的部分未填", "「參數設定」頁面的超參數的部分未填")
+                        self.alert_info("「參數設定」頁面的超參數的部分未填", "「參數設定」頁面「Hyper Parameters」的參數未填滿")
                         return False
                     else:
                         self.setting[name] = ""
@@ -497,7 +497,11 @@ class MainWindow_controller(QMainWindow):
 
         else:
             print("找不到設定檔，重新生成一個新的設定檔")
-            return {}
+            return {
+                "population size": 5,
+                "generations": 20,
+                "capture num": 1
+            }
 
     def read_config(self):
         assert os.path.exists('config')
