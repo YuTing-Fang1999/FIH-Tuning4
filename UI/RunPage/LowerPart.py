@@ -58,8 +58,5 @@ class LowerPart(QTabWidget):
         self.tab_hyper = TabPlot("超參數")
         self.addTab(self.tab_hyper, "超參數")
 
-        self.tab_loss = TabPlot("loss")
-        self.addTab(self.tab_loss, "loss")
-
         self.tab_update = TabPlot("update rate")
         self.addTab(self.tab_update, "update rate")

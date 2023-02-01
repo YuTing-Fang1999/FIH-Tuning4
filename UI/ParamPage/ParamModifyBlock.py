@@ -130,7 +130,8 @@ class ParamModifyBlock(QWidget):
                     idx += 1
                 else:
                     for j in range(item.col[i]):
-                        param_value.append(float(item.lineEdits[i][j].text()))
+                        if item.lineEdits[i][j].text()=="": param_value.append(0)
+                        else: param_value.append(float(item.lineEdits[i][j].text()))
                         idx += 1
         return param_value
     

@@ -7,12 +7,15 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtCore import Qt, pyqtSignal, QThread
 from myPackage.Capture import Capture
 ### 目前改成Tuning2!!! ###
-from myPackage.Tuning.Tuning2 import Tuning
+from myPackage.Tuning.Tuning import Tuning
+### 目前改成Tuning2!!! ###
 from myPackage.get_file_path import get_file_path_c7, get_file_path_c6
 from myPackage.read_param_value import read_param_value_c7, read_param_value_c6
 from myPackage.read_trigger_data import read_trigger_data_c7, read_trigger_data_c6
 from myPackage.set_param_value import set_param_value_c7, set_param_value_c6
 from myPackage.build_and_push import build_and_push_c7, build_and_push_c6
+
+from myPackage.Ref_Pic import gen_ref_noise, gen_ref_sharpness
 
 import os
 import xml.etree.ElementTree as ET
@@ -20,7 +23,7 @@ import json
 import threading
 import ctypes, inspect
 from time import sleep
-import cv2
+import shutil
 
 from UI.MainWindow import MainWindow
 
@@ -163,7 +166,18 @@ class MainWindow_controller(QMainWindow):
 
     def do_capture(self, saved_path):
         self.set_btn_enable("capture")
-        self.capture.capture(saved_path, capture_num=1)
+
+        if(saved_path=="Ref_Pic/capture/capture"):
+            if os.path.exists('Ref_Pic'): shutil.rmtree('Ref_Pic')
+            self.tuning.mkdir("Ref_Pic")
+            self.tuning.mkdir("Ref_Pic/capture")
+            N=10
+            if self.capture.capture(saved_path, capture_num=N):
+                gen_ref_noise(N)
+                gen_ref_sharpness(N)
+        else:
+            self.capture.capture(saved_path, capture_num=1)
+
         if(saved_path=="capture"): self.set_ROI_page_photo_signal.emit()
         self.set_btn_enable("done")
         
@@ -194,7 +208,6 @@ class MainWindow_controller(QMainWindow):
         root = item.parent().text(0)
         key = item.text(0)
         self.change_page_to(root, key)
-
 
     def change_page_to(self, root, key):
         self.setting["root"] = root
@@ -289,7 +302,7 @@ class MainWindow_controller(QMainWindow):
             self.start()
 
     def start(self):
-        self.get_UI_data()
+        if not self.get_UI_data(alert=True): return
         self.ui.logger.clear_info()
         self.ui.logger.signal.emit("START")
         self.set_btn_enable("run")
@@ -298,15 +311,12 @@ class MainWindow_controller(QMainWindow):
         self.ui.run_page.upper_part.btn_run.setText('STOP')
         self.ui.run_page.upper_part.mytimer.startTimer()
         
-
         # 建立一個子執行緒
         self.tuning_task = threading.Thread(target=lambda: self.tuning.run())
         # 當主程序退出，該執行緒也會跟著結束
         self.tuning_task.daemon = True
         # 執行該子執行緒
         self.tuning_task.start()
-
-
 
     def finish(self):
         self.ui.logger.signal.emit("STOP")
@@ -344,13 +354,13 @@ class MainWindow_controller(QMainWindow):
         
         elif case=="push" or case=="capture":
             self.ui.project_page.set_btn_enable(False)
-            self.ui.ROI_page.btn_capture.setEnabled(False)
+            self.ui.ROI_page.set_btn_enable(False)
             self.ui.param_page.push_and_save_block.set_btn_enable(False)
             self.ui.run_page.upper_part.btn_run.setEnabled(False)
 
         elif case=="done":
             self.ui.project_page.set_btn_enable(True)
-            self.ui.ROI_page.btn_capture.setEnabled(True)
+            self.ui.ROI_page.set_btn_enable(True)
             self.ui.param_page.push_and_save_block.set_btn_enable(True)
             self.ui.run_page.upper_part.btn_run.setEnabled(True)
 
@@ -405,19 +415,19 @@ class MainWindow_controller(QMainWindow):
         if 'saved_img_name' in self.setting:
             self.ui.param_page.push_and_save_block.lineEdits_img_name.setText(self.setting['saved_img_name'] )
 
-        ##### run page #####
-        if "TEST_MODE" in self.setting:
-            self.ui.run_page.upper_part.TEST_MODE.setChecked(self.setting["TEST_MODE"])
-            self.ui.run_page.upper_part.pretrain.setChecked(self.setting["PRETRAIN"])
-            self.ui.run_page.upper_part.train.setChecked(self.setting["TRAIN"])
+        if self.setting['method'] == "local search":
+            self.ui.param_page.hyper_setting_block.method_selector.setCurrentIndex(1)
+
+        if self.setting['init_param'] == "使用目前gain的參數":
+            self.ui.param_page.hyper_setting_block.init_param_selector.setCurrentIndex(1)
         
     
-    def get_UI_data(self):
+    def get_UI_data(self, alert=False):
 
         ##### project_page #####
         # 在選擇時已儲存到setting
-        # self.setting["project_path"] = self.ui.project_page.label_project_path.text()
-        # self.setting["exe_path"] = self.ui.project_page.label_exe_path.text()
+                # self.setting["project_path"]
+                # self.setting["exe_path"]
         self.setting["bin_name"] = self.ui.project_page.lineEdits_bin_name.text()
 
         ##### ROI_page #####
@@ -433,13 +443,26 @@ class MainWindow_controller(QMainWindow):
             self.setting["target_weight"].append(float(self.ui.ROI_page.table.cellWidget(i, 2).text()))
 
         ##### param_page #####
+        self.setting['method'] = self.ui.param_page.hyper_setting_block.method_selector.currentText()
+        self.setting['init_param'] = self.ui.param_page.hyper_setting_block.init_param_selector.currentText()
+
         self.setting["trigger_idx"] = self.ui.param_page.trigger_selector.currentIndex()
         self.setting["trigger_name"] = self.ui.param_page.trigger_selector.currentText()
 
+        if self.setting['method'] == "local search" and self.setting['init_param'] == "使用前一個gain的參數":
+            if alert and self.setting["trigger_idx"]-1 < 0:
+                self.alert_info("「參數設定」頁面的初始化參數選項錯誤", "「參數設定」的local search方法設定錯誤\n第一個gain不能使用前一個gain的參數\n只能使用目前參數作為初始化參數")
+                return False
+
         if "root" in self.setting:
             key_data = self.setting[self.setting["root"]][self.setting["key"]]
-
-            key_data["param_value"] = self.ui.param_page.param_modify_block.get_param_value()
+            if self.setting['method'] == "local search" and self.setting['init_param'] == "使用前一個gain的參數":
+                key_config = self.config[self.setting["platform"]][self.setting["root"]][self.setting["key"]]
+                file_path = self.get_file_path[self.setting["platform"]](self.setting["project_path"], key_config["file_path"])
+                key_data["param_value"] = self.read_param_value[self.setting["platform"]](self.setting["key"], key_config, file_path, self.setting["trigger_idx"]-1)
+            else:
+                key_data["param_value"] = self.ui.param_page.param_modify_block.get_param_value()
+            
             key_data["param_change_idx"] = self.ui.param_page.param_modify_block.get_param_change_idx()
 
             key_data["coustom_range"] = []
@@ -457,10 +480,7 @@ class MainWindow_controller(QMainWindow):
         self.setting['saved_dir_name'] = self.ui.param_page.push_and_save_block.lineEdits_dir_name.text()
         self.setting['saved_img_name'] = self.ui.param_page.push_and_save_block.lineEdits_img_name.text()
 
-        ##### run page #####
-        self.setting["TEST_MODE"] = self.ui.run_page.upper_part.TEST_MODE.isChecked()
-        self.setting["PRETRAIN"] = self.ui.run_page.upper_part.pretrain.isChecked()
-        self.setting["TRAIN"] = self.ui.run_page.upper_part.train.isChecked()
+        return True
 
     def read_setting(self):
         if os.path.exists('setting.json'):
@@ -486,10 +506,7 @@ class MainWindow_controller(QMainWindow):
             outfile.write(json.dumps(self.setting, indent=4))
 
     def closeEvent(self, event):
-        # if self.tuning.is_run: self.run_page.upper_part.finish()
-        # if self.param_window: self.param_window.close()
-        # if self.tuning.ML: self.tuning.ML.save_model()
-
+        if self.ui.param_window: self.ui.param_window.close()
         print('window close')
         self.get_UI_data()
         self.write_setting()

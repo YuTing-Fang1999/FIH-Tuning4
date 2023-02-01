@@ -23,7 +23,7 @@ class Capture(QWidget):
     def capture(self, path = "", focus_time = 3, save_time = 1, capture_num = 1):
 
         rc = self.open_camera()
-        if rc!=0: return
+        if rc!=0: return False
         # sleep(focus_time) #wait for auto focus
         self.log_info_signal.emit('wait for auto focus')
         # sleep(focus_time)
@@ -36,8 +36,10 @@ class Capture(QWidget):
             self.press_camera_button()
             sleep(0.05) 
         sleep(save_time) #wait for save photo
-        if self.setting["platform"] == "c6project": sleep(1)
+        if self.setting["platform"] == "c6project": sleep(2)
         self.transfer_img(path, capture_num)
+
+        return True
 
     def open_camera(self):
         if self.CAMERA_DEBUG: self.log_info_signal.emit('\nopen_camera')

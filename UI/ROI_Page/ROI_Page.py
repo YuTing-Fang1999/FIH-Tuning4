@@ -70,6 +70,10 @@ class ROI_Page(QWidget):
         self.btn_capture.setText("拍攝照片")
         self.btn_capture.setToolTip("會拍攝一張照片，請耐心等候")
 
+        self.btn_gen_ref = QPushButton()
+        self.btn_gen_ref.setText("產生參考照片")
+        self.btn_gen_ref.setToolTip("使用十張連拍做多幀降造產生目標照片")
+
         self.btn_load_target_pic = QPushButton("Load Target PIC")
         self.btn_load_target_pic.setToolTip("選擇目標照片")
 
@@ -85,6 +89,7 @@ class ROI_Page(QWidget):
         VBlayout = QVBoxLayout()
         VBlayout.addWidget(self.label_img)
         VBlayout.addWidget(self.btn_capture)
+        VBlayout.addWidget(self.btn_gen_ref)
         VBlayout.addWidget(self.btn_load_target_pic)
         VBlayout.addWidget(self.btn_add_ROI_item)
         HLayout.addLayout(VBlayout)
@@ -120,6 +125,7 @@ class ROI_Page(QWidget):
 
         ##### capture #####
         self.btn_capture.clicked.connect(lambda: self.capture_signal.emit("capture"))
+        self.btn_gen_ref.clicked.connect(lambda: self.capture_signal.emit("Ref_Pic/capture/capture"))
         
     def select_ROI(self, my_x_y_w_h, my_roi_img, target_roi_img):
         self.measure_window.measure_target(my_x_y_w_h, my_roi_img, target_roi_img)
@@ -196,6 +202,10 @@ class ROI_Page(QWidget):
         self.label_img.setPhoto(img)
         self.ROI_select_window.my_viewer.set_img(img)
         self.draw_ROI(self.rois)
+
+    def set_btn_enable(self, b):
+        self.btn_capture.setEnabled(b)
+        self.btn_gen_ref.setEnabled(b)
 
 if __name__ == '__main__':
     import sys

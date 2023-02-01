@@ -1,7 +1,7 @@
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow,
     QWidget, QGridLayout, QHBoxLayout, QVBoxLayout,
-    QPushButton, QLabel, QLineEdit, QCheckBox
+    QPushButton, QLabel, QLineEdit, QCheckBox, QFrame
 )
 from PyQt5.QtWidgets import QComboBox
 
@@ -11,11 +11,19 @@ class MethodSelector(QComboBox):
 
         self.setStyleSheet("font-size:12pt; font-family:微軟正黑體; background-color: rgb(255, 255, 255);")
 
-        item_names = ["globel search", "local search"]
+        item_names = ["glabel search", "local search"]
         self.clear()
         self.addItems(item_names) # -> set_trigger_idx 0
 
-        
+class InitParamSelector(QComboBox):
+    def __init__(self):
+        super().__init__()
+
+        self.setStyleSheet("font-size:12pt; font-family:微軟正黑體; background-color: rgb(255, 255, 255);")
+
+        item_names = ["使用前一個gain的參數", "使用目前gain的參數"]
+        self.clear()
+        self.addItems(item_names) # -> set_trigger_idx 0
 
 class HyperSettingBlock(QWidget):
     def __init__(self):
@@ -26,14 +34,22 @@ class HyperSettingBlock(QWidget):
     def setup_UI(self):
         VLayout = QVBoxLayout(self)
 
-        gridLayout = QGridLayout()
-        gridLayout.setContentsMargins(0, 0, 0, 0)
-        gridLayout.setHorizontalSpacing(7)
+        self.method_selector = MethodSelector()
+        self.init_param_selector = InitParamSelector()
+        self.method_intro = QLabel()
+        self.method_selector.currentIndexChanged[int].connect(self.set_idx)
+
+        self.gridLayout = QGridLayout()
+        self.gridLayout.setContentsMargins(0, 0, 0, 0)
+        self.gridLayout.setHorizontalSpacing(7)
+
+        self.gridLayout_wrapper = QFrame()
+        self.gridLayout_wrapper.setLayout(self.gridLayout)
 
         title_wraper = QHBoxLayout()
-        label_title = QLabel("Hyper Parameters")
-        label_title.setStyleSheet("background-color:rgb(72, 72, 72);")
-        title_wraper.addWidget(label_title)
+        self.label_title = QLabel("Hyper Parameters")
+        self.label_title.setStyleSheet("background-color:rgb(72, 72, 72);")
+        title_wraper.addWidget(self.label_title)
 
         self.hyper_param_name = ["population size", "generations", "capture num"] # "F", "Cr", 
         tip = ["要初始化幾組參數(不可小於5)\n實際使用建議為10", "總共跑幾輪", "每次計算分數時要拍幾張照片"] # "變異的程度(建議不要超過1)", "替換掉參數的比率(建議不要超過0.5)", 
@@ -45,25 +61,44 @@ class HyperSettingBlock(QWidget):
             label.setToolTip(tip[i])
             self.lineEdits_hyper_setting.append(lineEdit)
 
-            gridLayout.addWidget(label, i, 0)
-            gridLayout.addWidget(lineEdit, i, 1)
+            self.gridLayout.addWidget(label, i, 0)
+            self.gridLayout.addWidget(lineEdit, i, 1)
 
         VLayout.addLayout(title_wraper)
-        VLayout.addLayout(gridLayout)
+        
+        VLayout.addWidget(self.method_selector)
+        VLayout.addWidget(self.init_param_selector)
+        VLayout.addWidget(self.method_intro)
 
-        self.method_selector = MethodSelector()
-        self.method_intro = QLabel()
-        self.method_selector.currentIndexChanged[int].connect(self.set_idx)
+        VLayout.addWidget(self.gridLayout_wrapper)
+
         self.set_idx(0)
 
-        VLayout.addWidget(self.method_selector)
-        VLayout.addWidget(self.method_intro)
+    
+    def set_global_section_visiable(self, b):
+        if(b):
+            # global
+            self.label_title.show()
+            self.gridLayout_wrapper.show()
+
+            # local
+            self.init_param_selector.hide()
+        else:
+            # global
+            self.label_title.hide()
+            self.gridLayout_wrapper.hide()
+
+            # local
+            self.init_param_selector.show()
 
     def set_idx(self, idx):
         if idx==0:
-            self.method_intro.setText("globel search\n使用差分進化演算法\n隨機重新產生")
+            self.method_intro.setText("glabel search\n使用差分進化演算法\n隨機重新產生")
+            self.set_global_section_visiable(True)
         if idx==1:
-            self.method_intro.setText("globel search\n使用Nelder-Mead Simplex\n用前一個gain的參數當做初始化參數\n(不能用於第一個gain)")
+            self.method_intro.setText("local search\n使用Nelder-Mead Simplex\n可對參數做微調")
+            self.set_global_section_visiable(False)
+            
 
 
 

@@ -29,21 +29,21 @@ class UpperPart(QWidget):
 
         ##############
 
-        GLayout_ML = QGridLayout()
+        # GLayout_ML = QGridLayout()
 
-        self.TEST_MODE = QCheckBox()
-        GLayout_ML.addWidget(self.TEST_MODE, 0, 0, 1, 1, Qt.AlignRight)
-        GLayout_ML.addWidget(QLabel("TEST_MODE"), 0, 1, 1, 1)
+        # self.TEST_MODE = QCheckBox()
+        # GLayout_ML.addWidget(self.TEST_MODE, 0, 0, 1, 1, Qt.AlignRight)
+        # GLayout_ML.addWidget(QLabel("TEST_MODE"), 0, 1, 1, 1)
 
-        self.pretrain = QCheckBox()
-        GLayout_ML.addWidget(self.pretrain, 1, 0, 1, 1, Qt.AlignRight)
-        GLayout_ML.addWidget(QLabel("PRETRAIN"), 1, 1, 1, 1)
+        # self.pretrain = QCheckBox()
+        # GLayout_ML.addWidget(self.pretrain, 1, 0, 1, 1, Qt.AlignRight)
+        # GLayout_ML.addWidget(QLabel("PRETRAIN"), 1, 1, 1, 1)
 
-        self.train = QCheckBox()
-        GLayout_ML.addWidget(self.train, 2, 0, 1, 1, Qt.AlignRight)
-        GLayout_ML.addWidget(QLabel("TRAIN"), 2, 1, 1, 1)
+        # self.train = QCheckBox()
+        # GLayout_ML.addWidget(self.train, 2, 0, 1, 1, Qt.AlignRight)
+        # GLayout_ML.addWidget(QLabel("TRAIN"), 2, 1, 1, 1)
 
-        HLayout.addLayout(GLayout_ML)
+        # HLayout.addLayout(GLayout_ML)
 
         ##############
 
@@ -73,18 +73,6 @@ class UpperPart(QWidget):
 
         self.mytimer = MyTimer()
         HLayout.addWidget(self.mytimer)
-
-    # def update_UI(self):
-        # self.tuning = self.ui.tuning
-        # self.setting = self.ui.setting
-        # self.data = self.ui.data
-        # self.config = self.ui.config
-        # self.tab_info = self.ui.run_page.lower_part.tab_info
-
-
-    # def setup_controller(self):
-    #     self.btn_run.clicked.connect(self.run)
-    #     self.btn_param_window.clicked.connect(self.show_param_window)
 
     def set_score(self, score):
         self.label_score.setText(score)
