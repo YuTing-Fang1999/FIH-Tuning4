@@ -127,8 +127,11 @@ class ROI_Page(QWidget):
         self.btn_capture.clicked.connect(lambda: self.capture_signal.emit("capture"))
         self.btn_gen_ref.clicked.connect(lambda: self.capture_signal.emit("Ref_Pic/capture/capture"))
         
-    def select_ROI(self, my_x_y_w_h, my_roi_img, target_roi_img):
-        self.measure_window.measure_target(my_x_y_w_h, my_roi_img, target_roi_img)
+    # def select_ROI(self, my_x_y_w_h, my_roi_img, target_roi_img):
+    #     self.measure_window.measure_target(my_x_y_w_h, my_roi_img, target_roi_img)
+
+    def select_ROI(self, my_x_y_w_h, target_x_y_w_h, target_filepath):
+        self.measure_window.measure_target(my_x_y_w_h, target_x_y_w_h, target_filepath)
 
     def set_target_score(self, my_x_y_w_h, target_type, target_score):
         
@@ -195,6 +198,7 @@ class ROI_Page(QWidget):
         # load img
         img = cv2.imdecode(np.fromfile(file=filepath, dtype=np.uint8), cv2.IMREAD_COLOR)
         self.ROI_select_window.target_viewer.set_img(img)
+        self.ROI_select_window.filepath = filepath
         
     def set_photo(self, img_name):
         img = cv2.imread(img_name)

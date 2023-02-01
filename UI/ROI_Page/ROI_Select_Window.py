@@ -19,6 +19,7 @@ class ImageViewer(QtWidgets.QGraphicsView):
         super().__init__()
         self.w = w
         self.idx = idx
+        self.filepath = "./"
 
         self._zoom = 0
         self._empty = True
@@ -215,7 +216,8 @@ class ImageViewer(QtWidgets.QGraphicsView):
         return roi_coor
 
 class ROI_Select_Window(QtWidgets.QWidget):
-    to_main_window_signal = pyqtSignal(list, np.ndarray, np.ndarray)
+    # to_main_window_signal = pyqtSignal(list, np.ndarray, np.ndarray)
+    to_main_window_signal = pyqtSignal(list, list, str)
 
     def __init__(self):
         super().__init__()
@@ -260,26 +262,26 @@ class ROI_Select_Window(QtWidgets.QWidget):
             self.my_viewer.setDragMode(self.target_viewer.RubberBandDrag)
             self.target_viewer.setDragMode(self.target_viewer.RubberBandDrag)
 
-    def open_img(self):
-        filepath, filetype = QFileDialog.getOpenFileName(
-            self,
-            "選擇target照片",
-            self.filefolder,  # start path
-            'Image Files(*.png *.jpg *.jpeg *.bmp)'
-        )
+    # def open_img(self):
+    #     filepath, filetype = QFileDialog.getOpenFileName(
+    #         self,
+    #         "選擇target照片",
+    #         self.filefolder,  # start path
+    #         'Image Files(*.png *.jpg *.jpeg *.bmp)'
+    #     )
 
-        if filepath == '': return
+    #     if filepath == '': return
 
-        self.filefolder = '/'.join(filepath.split('/')[:-1])
-        self.filename = filepath.split('/')[-1]
+    #     self.filepath = filepath
+    #     self.filefolder = '/'.join(filepath.split('/')[:-1])
+    #     self.filename = filepath.split('/')[-1]
         
-        # load img
-        img = cv2.imdecode(np.fromfile(file=filepath, dtype=np.uint8), cv2.IMREAD_COLOR)
-        self.target_viewer.set_img(img)
+    #     # load img
+    #     img = cv2.imdecode(np.fromfile(file=filepath, dtype=np.uint8), cv2.IMREAD_COLOR)
+    #     self.target_viewer.set_img(img)
 
     def select_ROI(self):
-        
-        if len(self.target_viewer.img)==0: self.open_img()
+        # if len(self.target_viewer.img)==0: self.open_img()
         self.my_viewer.set_ROI_draw()
         self.target_viewer.set_ROI_draw()
         self.showMaximized()
@@ -291,15 +293,15 @@ class ROI_Select_Window(QtWidgets.QWidget):
         my_roi_coor = self.my_viewer.get_roi_coordinate()
         target_roi_coor = self.target_viewer.get_roi_coordinate()
 
-        x, y, w, h = self.roi_coor2x_y_w_h(target_roi_coor)
-        target_roi_img = self.target_viewer.img[y: y+h, x:x+w]
+        # x, y, w, h = self.roi_coor2x_y_w_h(target_roi_coor)
+        # target_roi_img = self.target_viewer.img[y: y+h, x:x+w]
 
-        x, y, w, h = self.roi_coor2x_y_w_h(my_roi_coor)
-        my_roi_img = self.my_viewer.img[y: y+h, x:x+w]
+        # x, y, w, h = self.roi_coor2x_y_w_h(my_roi_coor)
+        # my_roi_img = self.my_viewer.img[y: y+h, x:x+w]
 
         self.close()
 
-        self.to_main_window_signal.emit([x, y, w, h], my_roi_img, target_roi_img)
+        self.to_main_window_signal.emit(self.roi_coor2x_y_w_h(my_roi_coor), self.roi_coor2x_y_w_h(target_roi_coor), self.filepath)
         
 
 if __name__ == '__main__':

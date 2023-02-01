@@ -42,11 +42,39 @@ def get_luma_sobel_stdev(img):
     var = np.mean(sobelx**2 + sobely**2)
     return np.round(np.sqrt(var), 4)
 
-
 def get_type_name_and_tip():
-    type_name = ["luma stdev", "luma sobel stdev", "chroma stdev", "sharpness", "DL accutance"]
+    type_name = ["luma stdev", "luma sobel stdev", "chroma stdev", "sharpness", "DL accutance", "perceptual distance"]
     tip = [""]*len(type_name)
     return type_name, tip
+
+import lpips
+import torch
+## Initializing the model
+loss_fn = lpips.LPIPS(net='alex',version='0.1')
+
+if(torch.cuda.is_available()):
+	loss_fn.cuda()
+
+def get_perceptual_distance(img0, img1):
+    h = min(img0.shape[0], img1.shape[0])
+    w = min(img0.shape[1], img1.shape[1])
+
+    img0 = img0[:h, :w]
+    img1 = img1[:h, :w]
+
+    # Load images
+    img0 = lpips.im2tensor(img0) # RGB image from [-1,1]
+    img1 = lpips.im2tensor(img1)
+
+    print(img0)
+
+    if(torch.cuda.is_available()):
+        img0 = img0.cuda()
+        img1 = img1.cuda()
+
+    # Compute distance
+    dist01 = loss_fn.forward(img0, img1)
+    return float('%.4f'%dist01)
 
 def get_cal_func():
     calFunc = {}
@@ -55,5 +83,6 @@ def get_cal_func():
     calFunc["chroma stdev"] = get_chroma_stdev
     calFunc["sharpness"] = get_sharpness
     calFunc["DL accutance"] = get_average_gnorm
+    calFunc["perceptual distance"] = get_perceptual_distance
 
     return calFunc

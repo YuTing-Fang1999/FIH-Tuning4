@@ -85,21 +85,38 @@ class MeasureWindow(QWidget):
             "QPushButton{font-size:12pt; font-family:微軟正黑體; background-color:rgb(255, 170, 0);}"
         )
 
-    def measure_target(self, my_x_y_w_h, my_roi_img, target_roi_img):
+    def measure_target(self, my_x_y_w_h, target_x_y_w_h, target_filepath):
         self.my_x_y_w_h = my_x_y_w_h
+        self.target_x_y_w_h = target_x_y_w_h
+        # load img
+        my_img = cv2.imdecode(np.fromfile(file="capture.jpg", dtype=np.uint8), cv2.IMREAD_COLOR)
+        target_img = cv2.imdecode(np.fromfile(file=target_filepath, dtype=np.uint8), cv2.IMREAD_COLOR)
+
+        x, y, w, h = my_x_y_w_h
+        my_roi_img = my_img[y: y+h, x:x+w]
+
+        x, y, w, h = target_x_y_w_h
+        target_roi_img = target_img[y: y+h, x:x+w]
+
         self.my_block.img_block.setPhoto(my_roi_img)
         self.target_block.img_block.setPhoto(target_roi_img)
 
         self.score_value = []
         for i in range(len(self.type_name)):
-            v = self.calFunc[self.type_name[i]](target_roi_img)
-            v = np.around(v, 5)
-            self.target_block.score_block.label_score[i].setText(str(v))
-            self.score_value.append(v)
+            if self.type_name[i] == "perceptual distance":
+                v_target = self.calFunc[self.type_name[i]](target_roi_img, target_roi_img)
+                v_my = self.calFunc[self.type_name[i]](my_roi_img, target_roi_img)
+            else:
+                v_target = self.calFunc[self.type_name[i]](target_roi_img)
+                v_my = self.calFunc[self.type_name[i]](my_roi_img)
 
-            v = self.calFunc[self.type_name[i]](my_roi_img)
-            v = np.around(v, 5)
-            self.my_block.score_block.label_score[i].setText(str(v))
+            v_target = np.around(v_target, 5)
+            self.target_block.score_block.label_score[i].setText(str(v_target))
+            v_my = np.around(v_my, 5)
+            self.my_block.score_block.label_score[i].setText(str(v_my))
+            
+            self.score_value.append(v_target)
+
 
         self.showMaximized()
 
