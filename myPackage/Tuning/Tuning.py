@@ -124,6 +124,7 @@ class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
         self.target_IQM = np.array(self.setting["target_score"])
         self.weight_IQM = np.array(self.setting["target_weight"])
         self.target_num = len(self.target_type)
+        # 暫時設成1
         self.std_IQM = np.ones(self.target_num)
 
         # get the bounds of each parameter
@@ -431,9 +432,8 @@ class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
 
 
         self.IQMs = np.array(self.IQMs)
-        self.std_IQM = self.IQMs.std(axis=0)
         # 暫時設成1
-        self.std_IQM = np.ones(self.target_num)
+        # self.std_IQM = self.IQMs.std(axis=0)
 
         # 依據標準差重新計算
         for ind_idx in range(self.popsize):
@@ -464,9 +464,6 @@ class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
 
         # 更新經由標準差後的分數
         self.update_param_window_scores_signal.emit(self.fitness)
-        # 暫時將std設為1
-        self.std_IQM = np.ones(self.target_num)
-        print('std_IQM',self.std_IQM)
 
         if not self.TEST_MODE:
             with open('log/init.csv', 'w', newline='') as file:

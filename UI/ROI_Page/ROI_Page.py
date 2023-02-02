@@ -211,9 +211,28 @@ class ROI_Page(QWidget):
         self.ROI_select_window.my_viewer.set_img(img)
         self.draw_ROI(self.my_rois)
 
-    def set_btn_enable(self, b):
-        self.btn_capture.setEnabled(b)
-        self.btn_gen_ref.setEnabled(b)
+    def set_btn_enable(self, case):
+        if case=="run":
+            self.btn_capture.setEnabled(False)
+            self.btn_gen_ref.setEnabled(False)
+            self.btn_load_target_pic.setEnabled(False)
+            self.btn_add_ROI_item.setEnabled(False)
+        
+        elif case=="push" or case=="capture":
+            self.btn_capture.setEnabled(False)
+            self.btn_gen_ref.setEnabled(False)
+            self.btn_load_target_pic.setEnabled(True)
+            self.btn_add_ROI_item.setEnabled(False)
+
+        elif case=="done":
+            self.btn_capture.setEnabled(True)
+            self.btn_gen_ref.setEnabled(True)
+            self.btn_load_target_pic.setEnabled(True)
+            self.btn_add_ROI_item.setEnabled(True)
+
+    # def set_btn_enable(self, b):
+    #     self.btn_capture.setEnabled(b)
+    #     self.btn_gen_ref.setEnabled(b)
 
 if __name__ == '__main__':
     import sys

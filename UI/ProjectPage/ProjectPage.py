@@ -79,7 +79,7 @@ class ProjectPage(QWidget):
         self.lineEdits_bin_name.hide()
 
     def setc6Form(self):
-        self.btn_select_project.setText("選擇J3P_CMax資料夾")
+        self.btn_select_project.setText("選擇CMax資料夾")
         self.btn_select_project.show()
         self.label_project_path.show()
         self.btn_select_exe.hide()

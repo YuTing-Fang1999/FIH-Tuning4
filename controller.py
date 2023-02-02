@@ -6,9 +6,7 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtCore import Qt, pyqtSignal, QThread
 from myPackage.Capture import Capture
-### 目前改成Tuning2!!! ###
 from myPackage.Tuning.Tuning import Tuning
-### 目前改成Tuning2!!! ###
 from myPackage.get_file_path import get_file_path_c7, get_file_path_c6
 from myPackage.read_param_value import read_param_value_c7, read_param_value_c6
 from myPackage.read_trigger_data import read_trigger_data_c7, read_trigger_data_c6
@@ -347,20 +345,20 @@ class MainWindow_controller(QMainWindow):
         QMessageBox.about(self, title, text)
 
     def set_btn_enable(self, case):
+        self.ui.ROI_page.set_btn_enable(case)
         if case=="run":
             self.ui.project_page.set_btn_enable(False)
-            self.ui.ROI_page.set_btn_enable(False)
             self.ui.param_page.push_and_save_block.set_btn_enable(False)
         
         elif case=="push" or case=="capture":
             self.ui.project_page.set_btn_enable(False)
-            self.ui.ROI_page.set_btn_enable(False)
+            # self.ui.ROI_page.set_btn_enable(False)
             self.ui.param_page.push_and_save_block.set_btn_enable(False)
             self.ui.run_page.upper_part.btn_run.setEnabled(False)
 
         elif case=="done":
             self.ui.project_page.set_btn_enable(True)
-            self.ui.ROI_page.set_btn_enable(True)
+            # self.ui.ROI_page.set_btn_enable(True)
             self.ui.param_page.push_and_save_block.set_btn_enable(True)
             self.ui.run_page.upper_part.btn_run.setEnabled(True)
 
