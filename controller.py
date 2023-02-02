@@ -210,12 +210,13 @@ class MainWindow_controller(QMainWindow):
     def change_page_to(self, root, key):
         self.setting["root"] = root
         self.setting["key"] = key
+        self.setting["trigger_idx"] = self.ui.param_page.trigger_selector.currentIndex()
         self.ui.logger.signal.emit('Change param page to {}/{}'.format(root, key))
 
-        ##### param_page UI #####
         key_config = self.config[self.setting["platform"]][self.setting["root"]][self.setting["key"]]
         key_data = self.setting[self.setting["root"]][self.setting["key"]]
 
+        ##### param_page UI #####
         self.ui.param_page.param_modify_block.update_UI(key_config)
         self.ui.param_page.param_range_block.update_UI(key_config)
         self.ui.param_page.param_range_block.update_defult_range(key_config["defult_range"])
@@ -224,8 +225,14 @@ class MainWindow_controller(QMainWindow):
         else:
             self.ui.param_page.param_range_block.update_coustom_range(key_config["defult_range"])
 
+        #### trigger ####
+        print(self.setting["trigger_idx"])
+        file_path = self.get_file_path[self.setting["platform"]](self.setting["project_path"], key_config["file_path"])
+        aec_trigger_datas = self.read_trigger_data[self.setting["platform"]](key_config, file_path)
+        self.ui.param_page.trigger_selector.update_UI(aec_trigger_datas)
+
         self.ui.param_page.trigger_selector.setCurrentIndex(self.setting["trigger_idx"])
-        self.set_trigger_idx(self.setting["trigger_idx"])
+        # self.set_trigger_idx(self.setting["trigger_idx"])
 
     def select_project(self):
         path = QFileDialog.getExistingDirectory(self,"選擇project", self.ui.project_page.defult_path) # start path
@@ -266,10 +273,11 @@ class MainWindow_controller(QMainWindow):
             self.ui.project_page.label_project_path.setText("找不到"+file_path+"\n請確認"+self.setting["project_path"]+"是否為"+self.setting["platform"])
             self.ui.param_page.reset_UI()
             return
+
+
         aec_trigger_datas = self.read_trigger_data[self.setting["platform"]](key_config, file_path)
-        
-        
         self.ui.param_page.trigger_selector.update_UI(aec_trigger_datas)
+
         self.ui.logger.show_info("Load {} Successfully".format(self.setting["project_name"]))
 
         self.ui.tabWidget.setTabEnabled(1, True)
@@ -283,8 +291,6 @@ class MainWindow_controller(QMainWindow):
             self.ui.logger.signal.emit("set_trigger_idx return because trigger_idx=-1")
             return
         self.ui.logger.signal.emit('trigger_idx: {}'.format(trigger_idx))
-
-        self.setting["trigger_idx"] = trigger_idx
 
         key_config = self.config[self.setting["platform"]][self.setting["root"]][self.setting["key"]]
         
@@ -399,7 +405,7 @@ class MainWindow_controller(QMainWindow):
             for i in range(len(setting["target_type"])):
                 self.ui.ROI_page.add_to_table(setting["target_type"][i], setting["target_score"][i], setting["target_weight"][i])
         
-        if "target_filepath" in self.setting:
+        if "target_filepath" in self.setting and self.setting["target_filepath"] != "./":
             if os.path.exists(self.setting["target_filepath"]):
                 self.ui.ROI_page.target_filepath = self.setting["target_filepath"]
                 self.ui.ROI_page.set_target_img(self.setting["target_filepath"])

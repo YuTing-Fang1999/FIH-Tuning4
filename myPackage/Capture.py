@@ -36,9 +36,9 @@ class Capture(QWidget):
             self.press_camera_button()
             sleep(0.05) 
         sleep(save_time) #wait for save photo
-        if self.setting["platform"] == "c6project": sleep(1)
+        if self.setting["platform"] == "c6project": sleep(0.5)
         self.transfer_img(path, capture_num)
-        if self.setting["platform"] == "c6project": sleep(1)
+        if self.setting["platform"] == "c6project": sleep(2)
         return True
 
     def open_camera(self):

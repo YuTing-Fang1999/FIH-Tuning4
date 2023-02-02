@@ -426,7 +426,7 @@ class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
                 # csv data
                 data = ["ind{}_init".format(ind_idx), 0]
                 for IQM in now_IQM: data.append(IQM)
-                data.append(trial_denorm)
+                data.append(self.param_value)
                 self.csv_data.append(data)
                 self.best_csv_data.append(data)
 
@@ -529,7 +529,7 @@ class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
 
         data = ['ind{}_gne{}'.format(ind_idx, gen_idx), f]
         for IQM in now_IQM: data.append(IQM)
-        data.append(trial_denorm)
+        data.append(self.param_value)
         self.csv_data.append(data)
 
         # 如果突變種比原本的更好

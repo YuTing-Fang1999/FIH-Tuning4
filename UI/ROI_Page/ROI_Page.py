@@ -230,9 +230,6 @@ class ROI_Page(QWidget):
             self.btn_load_target_pic.setEnabled(True)
             self.btn_add_ROI_item.setEnabled(True)
 
-    # def set_btn_enable(self, b):
-    #     self.btn_capture.setEnabled(b)
-    #     self.btn_gen_ref.setEnabled(b)
 
 if __name__ == '__main__':
     import sys
