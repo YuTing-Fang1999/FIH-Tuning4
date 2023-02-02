@@ -67,6 +67,16 @@ class MainWindow(QMainWindow):
             QMessageBox QPushButton{
                 font-size:12pt; font-family:微軟正黑體; background-color:rgb(255, 170, 0);
             }
+
+            QInputDialog QLabel {
+                font-size:12pt; font-family:微軟正黑體; color:white;
+            }
+            QInputDialog QPushButton{
+                font-size:12pt; font-family:微軟正黑體; background-color:rgb(255, 170, 0);
+            }
+            QInputDialog QPlainTextEdit{
+                font-size:10pt; font-family:微軟正黑體; background-color: rgb(255, 255, 255); border: 2px solid gray; border-radius: 5px;
+            }
             """
 
         )

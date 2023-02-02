@@ -104,10 +104,13 @@ class ParamModifyBlock(QWidget):
                         idx +=1
                 else:
                     for j in range(item.col[i]):
+                        if idx==len(param_value): break
                         # ##### param value #####
                         item.lineEdits[i][j].setText(str(param_value[idx]))
                         item.lineEdits[i][j].setCursorPosition(0)
                         idx += 1
+
+                
 
     def update_param_change_idx(self, param_change_idx):
         ##### data #####

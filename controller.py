@@ -2,7 +2,7 @@ from PyQt5.QtWidgets import (
     QTabWidget, QStatusBar, QWidget, QLabel,
     QMainWindow, QMessageBox, QToolButton,
     QVBoxLayout, QScrollArea, QSplitter,
-    QFileDialog
+    QFileDialog, QInputDialog, QLineEdit
 )
 from PyQt5.QtCore import Qt, pyqtSignal, QThread
 from myPackage.Capture import Capture
@@ -79,6 +79,7 @@ class MainWindow_controller(QMainWindow):
         ##### param page #####
         self.ui.param_page.trigger_selector.currentIndexChanged[int].connect(self.set_trigger_idx)
         self.ui.param_page.ISP_tree.tree.itemClicked.connect(self.ISP_tree_itemClicked)
+        self.ui.param_page.push_and_save_block.btn_input_param.clicked.connect(self.input_param)
 
         ##### run page #####
         self.ui.run_page.upper_part.btn_run.clicked.connect(self.run)
@@ -127,7 +128,14 @@ class MainWindow_controller(QMainWindow):
 
         self.ui.param_page.push_and_save_block.get_and_set_param_value_signal.connect(self.get_and_set_param_value_slot)
         self.ui.param_page.push_and_save_block.push_to_camera_signal.connect(self.get_and_build_and_push_start)
-        
+    
+    def input_param(self):
+        text, okPressed = QInputDialog.getMultiLineText(self, "參數輸入","參數\n直接複製csv的參數即可\n格式: [1 2 3]\n參數以中括號括起，以空格隔開，中括號與數字之間不能有空格", "")
+        if okPressed and text != '':
+            param_value = json.loads(text.replace(' ', ','))
+            self.ui.logger.show_info("input_param: {}".format(param_value))
+            self.ui.param_page.param_modify_block.update_param_value(param_value)
+
     def get_and_set_param_value_slot(self):
         key_config = self.config[self.setting["platform"]][self.setting["root"]][self.setting["key"]]
         param_value = self.ui.param_page.param_modify_block.get_param_value()
