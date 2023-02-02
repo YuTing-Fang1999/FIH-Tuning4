@@ -144,15 +144,19 @@ class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
             self.finish_signal.emit()
             return
 
+        self.show_info()
+        
+
         # save target ROI
         if os.path.exists("target_ROI"): shutil.rmtree("target_ROI")
         self.mkdir("target_ROI")
         self.target_roi_img = []
-        target_img = cv2.imdecode(np.fromfile(file=self.setting["target_filepath"], dtype=np.uint8), cv2.IMREAD_COLOR)
-        for i, target_x_y_w_h in enumerate(self.target_roi):
-            x, y, w, h = target_x_y_w_h
+        for i, target in enumerate(self.target_roi):
+            print(target)
+            target_img = cv2.imdecode(np.fromfile(file=target[0], dtype=np.uint8), cv2.IMREAD_COLOR)
+            x, y, w, h = target[1]
             self.target_roi_img.append(target_img[y: y+h, x:x+w])
-            cv2.imwrite("target_ROI/{}.jpg".format(i+1), target_img[y: y+h, x:x+w])
+            cv2.imwrite("target_ROI/target_ROI{}.jpg".format(i+1), target_img[y: y+h, x:x+w])
         
         # csv data
         title = ["name", "score"]
@@ -170,7 +174,12 @@ class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
 
         ##### start tuning #####
         # setup
-        self.show_info()
+        if not self.TEST_MODE:
+            # 刪除資料夾
+            if os.path.exists('log'): shutil.rmtree('log')
+            if os.path.exists('best_photo'): shutil.rmtree('best_photo')
+            self.mkdir('log')
+            self.mkdir('best_photo')
         self.setup()
         print(self.setting["method"])
         if self.setting["method"] == "global search":
@@ -229,6 +238,11 @@ class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
         now_IQM = self.measure_IQM_by_param_value('log/init', self.param_value)
         self.IQMs.append(now_IQM)
         prev_best = self.cal_score_by_weight(now_IQM)
+
+        data = ["init_0", prev_best]
+        for IQM in now_IQM: data.append(IQM)
+        data.append(self.param_value.copy())
+        self.csv_data.append(data)
         
         no_improv = 0
         dim = self.param_change_num
@@ -244,13 +258,18 @@ class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
             x = copy.copy(x_start)
             x[i] = x[i] + step
             self.param_value[self.param_change_idx] = self.min_b + x * self.diff #denorm
-            now_IQM = self.measure_IQM_by_param_value('log/init_{}'.format(i), self.param_value)
+            now_IQM = self.measure_IQM_by_param_value('log/init_{}'.format(i+1), self.param_value)
             self.IQMs.append(now_IQM)
             score = self.cal_score_by_weight(now_IQM)
             self.log_info_signal.emit('init: {}'.format([x, score]))
             self.update_param_window_signal.emit(i+1, self.param_value[self.param_change_idx], score, now_IQM)
             self.pop.append(x)
             self.fitness.append(score)
+
+            data = ["init_{}".format(i), score]
+            for IQM in now_IQM: data.append(IQM)
+            data.append(self.param_value.copy())
+            self.csv_data.append(data)
             # res.append([x, score])
 
         self.pop = self.min_b + self.pop * self.diff #denorm
@@ -269,6 +288,10 @@ class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
         # simplex iter
         iters = 0
         while 1:
+            if not self.TEST_MODE:
+                with open('log/iter{}.csv'.format(iters), 'w', newline='') as file:
+                    writer = csv.writer(file)
+                    writer.writerows(self.csv_data)
             self.set_generation_signal.emit(str(iters))
             # self.log_info_signal.emit(str(iters))
             # order
@@ -286,6 +309,7 @@ class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
             # break after no_improv_break iterations with no improvement
             self.log_info_signal.emit('...best so far: {}'.format(best))
             self.update_best_score(best)
+            self.bset_score_plot.update([best])
 
             if best < prev_best - no_improve_thr:
                 no_improv = 0
@@ -296,7 +320,13 @@ class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
             if no_improv >= no_improv_break:
                 self.log_info_signal.emit('...best so far: {}'.format(best))
                 self.log_info_signal.emit('stop because no improvement')
-                return self.fitness[0]
+
+                if not self.TEST_MODE:
+                    with open('log/iter{}.csv'.format(iters), 'w', newline='') as file:
+                        writer = csv.writer(file)
+                        writer.writerows(self.csv_data)
+
+                return self.pop[0]
 
             # centroid
             x0 = [0.] * dim
@@ -315,6 +345,12 @@ class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
 
             now_IQM = self.measure_IQM_by_param_value('log/iter_{}_reflection'.format(iters), self.param_value)
             rscore = self.cal_score_by_weight(now_IQM)
+
+            data = ["iter_{}_reflection".format(iters), rscore]
+            for IQM in now_IQM: data.append(IQM)
+            data.append(self.param_value.copy())
+            self.csv_data.append(data)
+
             if self.fitness[0] <= rscore < self.fitness[-2]:
                 del self.pop[-1]
                 del self.fitness[-1]
@@ -335,6 +371,12 @@ class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
 
                 now_IQM = self.measure_IQM_by_param_value('log/iter_{}_expansion'.format(iters), self.param_value)
                 escore = self.cal_score_by_weight(now_IQM)
+
+                data = ["iter_{}_expansion".format(iters), escore]
+                for IQM in now_IQM: data.append(IQM)
+                data.append(self.param_value.copy())
+                self.csv_data.append(data)
+
                 if escore < rscore:
                     del self.pop[-1]
                     del self.fitness[-1]
@@ -365,6 +407,12 @@ class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
 
             now_IQM = self.measure_IQM_by_param_value('log/iter_{}_contraction'.format(iters), self.param_value)
             cscore = self.cal_score_by_weight(now_IQM)
+
+            data = ["iter_{}_contraction".format(iters), cscore]
+            for IQM in now_IQM: data.append(IQM)
+            data.append(self.param_value.copy())
+            self.csv_data.append(data)
+
             if cscore < self.fitness[-1]:
                 del self.pop[-1]
                 del self.fitness[-1]
@@ -390,18 +438,18 @@ class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
                 self.param_value[self.param_change_idx] = self.min_b + redx * self.diff #denorm
                 now_IQM = self.measure_IQM_by_param_value('log/iter_{}_reduction_{}'.format(iters, tup_i), self.param_value)
                 score = self.cal_score_by_weight(now_IQM)
+
+                data = ["iter_{}_reduction_{}".format(iters, tup_i), score]
+                for IQM in now_IQM: data.append(IQM)
+                data.append(self.param_value.copy())
+                self.csv_data.append(data)
+
                 nres.append([redx, score])
                 self.update_param_window_signal.emit(tup_i, self.param_value[self.param_change_idx], score, now_IQM)
 
             res = nres
 
     def initial_individual(self):
-        if not self.TEST_MODE:
-            # 刪除資料夾
-            if os.path.exists('log'): shutil.rmtree('log')
-            if os.path.exists('best_photo'): shutil.rmtree('best_photo')
-            self.mkdir('log')
-            self.mkdir('best_photo')
         
         self.set_generation_signal.emit("initialize")
 
@@ -426,7 +474,7 @@ class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
                 # csv data
                 data = ["ind{}_init".format(ind_idx), 0]
                 for IQM in now_IQM: data.append(IQM)
-                data.append(self.param_value)
+                data.append(self.param_value.copy())
                 self.csv_data.append(data)
                 self.best_csv_data.append(data)
 
@@ -529,7 +577,7 @@ class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
 
         data = ['ind{}_gne{}'.format(ind_idx, gen_idx), f]
         for IQM in now_IQM: data.append(IQM)
-        data.append(self.param_value)
+        data.append(self.param_value.copy())
         self.csv_data.append(data)
 
         # 如果突變種比原本的更好

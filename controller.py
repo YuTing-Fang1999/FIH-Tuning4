@@ -210,7 +210,8 @@ class MainWindow_controller(QMainWindow):
     def change_page_to(self, root, key):
         self.setting["root"] = root
         self.setting["key"] = key
-        self.setting["trigger_idx"] = self.ui.param_page.trigger_selector.currentIndex()
+        if self.ui.param_page.trigger_selector.currentIndex() != -1:
+            self.setting["trigger_idx"] = self.ui.param_page.trigger_selector.currentIndex()
         self.ui.logger.signal.emit('Change param page to {}/{}'.format(root, key))
 
         key_config = self.config[self.setting["platform"]][self.setting["root"]][self.setting["key"]]
@@ -226,11 +227,12 @@ class MainWindow_controller(QMainWindow):
             self.ui.param_page.param_range_block.update_coustom_range(key_config["defult_range"])
 
         #### trigger ####
-        print(self.setting["trigger_idx"])
+        
         file_path = self.get_file_path[self.setting["platform"]](self.setting["project_path"], key_config["file_path"])
         aec_trigger_datas = self.read_trigger_data[self.setting["platform"]](key_config, file_path)
         self.ui.param_page.trigger_selector.update_UI(aec_trigger_datas)
-
+        print(self.setting["trigger_idx"], root, key, file_path)
+        
         self.ui.param_page.trigger_selector.setCurrentIndex(self.setting["trigger_idx"])
         # self.set_trigger_idx(self.setting["trigger_idx"])
 
@@ -274,10 +276,6 @@ class MainWindow_controller(QMainWindow):
             self.ui.param_page.reset_UI()
             return
 
-
-        aec_trigger_datas = self.read_trigger_data[self.setting["platform"]](key_config, file_path)
-        self.ui.param_page.trigger_selector.update_UI(aec_trigger_datas)
-
         self.ui.logger.show_info("Load {} Successfully".format(self.setting["project_name"]))
 
         self.ui.tabWidget.setTabEnabled(1, True)
@@ -285,6 +283,7 @@ class MainWindow_controller(QMainWindow):
         self.ui.tabWidget.setTabEnabled(3, True)
 
         self.change_page_to(self.setting["root"], self.setting["key"])
+        self.set_trigger_idx(self.setting["trigger_idx"])
 
     def set_trigger_idx(self, trigger_idx):
         if trigger_idx==-1:
@@ -371,7 +370,8 @@ class MainWindow_controller(QMainWindow):
 
     def set_UI_data(self, setting):
         
-
+        if "trigger_idx" not in self.setting: self.setting["trigger_idx"] = 0
+        
         ##### project_page #####
         if "platform" in setting:
             self.ui.project_page.platform_selecter.set_platform(setting["platform"])
@@ -405,10 +405,10 @@ class MainWindow_controller(QMainWindow):
             for i in range(len(setting["target_type"])):
                 self.ui.ROI_page.add_to_table(setting["target_type"][i], setting["target_score"][i], setting["target_weight"][i])
         
-        if "target_filepath" in self.setting and self.setting["target_filepath"] != "./":
-            if os.path.exists(self.setting["target_filepath"]):
-                self.ui.ROI_page.target_filepath = self.setting["target_filepath"]
-                self.ui.ROI_page.set_target_img(self.setting["target_filepath"])
+        # if "target_filepath" in self.setting and self.setting["target_filepath"] != "./":
+        #     if os.path.exists(self.setting["target_filepath"]):
+        #         self.ui.ROI_page.target_filepath = self.setting["target_filepath"]
+        #         self.ui.ROI_page.set_target_img(self.setting["target_filepath"])
 
         ##### param_page #####
         if "root" in self.setting:

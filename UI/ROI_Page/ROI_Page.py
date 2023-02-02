@@ -70,10 +70,10 @@ class ROI_Page(QWidget):
 
         self.btn_gen_ref = QPushButton()
         self.btn_gen_ref.setText("產生參考照片")
-        self.btn_gen_ref.setToolTip("使用十張連拍做多幀降造產生目標照片")
+        self.btn_gen_ref.setToolTip("使用十張連拍做多幀降造產生參考照片")
 
-        self.btn_load_target_pic = QPushButton("Load 目標照片")
-        self.btn_load_target_pic.setToolTip("選擇目標照片")
+        self.btn_load_target_pic = QPushButton("Load 參考照片")
+        self.btn_load_target_pic.setToolTip("選擇參考照片")
 
         self.btn_add_ROI_item = QPushButton()
         self.btn_add_ROI_item.setText("增加ROI區域")
@@ -131,11 +131,11 @@ class ROI_Page(QWidget):
     def select_ROI(self, my_x_y_w_h, target_x_y_w_h, target_filepath):
         self.measure_window.measure_target(my_x_y_w_h, target_x_y_w_h, target_filepath)
 
-    def set_target_score(self, my_x_y_w_h, target_x_y_w_h, target_type, target_score):
+    def set_target_score(self, my_x_y_w_h, target_x_y_w_h, target_type, target_score, target_filepath):
         
         for i in range(len(target_type)):
             self.add_to_table(target_type[i], target_score[i], 1)
-            self.target_rois.append(target_x_y_w_h)
+            self.target_rois.append([target_filepath, target_x_y_w_h])
             self.my_rois.append(my_x_y_w_h)
             self.draw_ROI(self.my_rois)
 
@@ -163,7 +163,7 @@ class ROI_Page(QWidget):
             return
         
         if len(self.ROI_select_window.target_viewer.img)==0:
-            self.alert_info_signal.emit("請先Load目標照片", "請先Load目標照片，再選取區域")
+            self.alert_info_signal.emit("請先Load參考照片", "請先Load參考照片，再選取區域")
             return
 
         self.ROI_select_window.select_ROI()
@@ -217,6 +217,11 @@ class ROI_Page(QWidget):
             self.btn_gen_ref.setEnabled(False)
             self.btn_load_target_pic.setEnabled(False)
             self.btn_add_ROI_item.setEnabled(False)
+
+            for row in range(self.table.rowCount()): 
+                _item = self.table.cellWidget(row, 3) 
+                if _item:            
+                    _item.setEnabled(False)
         
         elif case=="push" or case=="capture":
             self.btn_capture.setEnabled(False)
@@ -229,6 +234,11 @@ class ROI_Page(QWidget):
             self.btn_gen_ref.setEnabled(True)
             self.btn_load_target_pic.setEnabled(True)
             self.btn_add_ROI_item.setEnabled(True)
+
+            for row in range(self.table.rowCount()): 
+                _item = self.table.cellWidget(row, 3) 
+                if _item:            
+                    _item.setEnabled(True)
 
 
 if __name__ == '__main__':

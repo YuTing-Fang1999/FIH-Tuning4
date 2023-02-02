@@ -49,7 +49,7 @@ class Block(QWidget):
         self.VLayout.addWidget(self.score_block)
 
 class MeasureWindow(QWidget):  
-    to_main_window_signal = pyqtSignal(list, list, list, list)
+    to_main_window_signal = pyqtSignal(list, list, list, list, str)
     
     def __init__(self):
         super().__init__()  
@@ -88,6 +88,7 @@ class MeasureWindow(QWidget):
     def measure_target(self, my_x_y_w_h, target_x_y_w_h, target_filepath):
         self.my_x_y_w_h = my_x_y_w_h
         self.target_x_y_w_h = target_x_y_w_h
+        self.target_filepath = target_filepath
         # load img
         my_img = cv2.imdecode(np.fromfile(file="capture.jpg", dtype=np.uint8), cv2.IMREAD_COLOR)
         target_img = cv2.imdecode(np.fromfile(file=target_filepath, dtype=np.uint8), cv2.IMREAD_COLOR)
@@ -129,7 +130,7 @@ class MeasureWindow(QWidget):
                 score_value.append(self.score_value[i])
 
         self.close()
-        self.to_main_window_signal.emit(self.my_x_y_w_h, self.target_x_y_w_h, target_type, score_value)
+        self.to_main_window_signal.emit(self.my_x_y_w_h, self.target_x_y_w_h, target_type, score_value, self.target_filepath)
 
 
 if __name__ == '__main__':

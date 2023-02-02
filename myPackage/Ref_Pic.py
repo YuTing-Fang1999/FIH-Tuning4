@@ -27,7 +27,8 @@ def gen_ref_sharpness(N):
     data: torch.tensor = kornia.utils.image_to_tensor(img, keepdim=False)
     data = data.float() / 255
 
-    sharpen = kornia.filters.UnsharpMask((9,9), (2.5,2.5))
+    # kornia.filters.UnsharpMask(kernel_size, sigma) kernel_size越大，白邊越強
+    sharpen = kornia.filters.UnsharpMask((7,7), (2.5,2.5))
     sharpened_tensor = sharpen(data)
     # difference = (sharpened_tensor - data).abs()
     save_image(sharpened_tensor, 'Ref_Pic/ref_sharpened_{}.jpg'.format(N))
