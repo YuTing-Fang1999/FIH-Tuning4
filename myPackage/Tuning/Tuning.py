@@ -143,11 +143,14 @@ class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
             self.finish_signal.emit()
             return
 
+        # save target ROI
         if os.path.exists("target_ROI"): shutil.rmtree("target_ROI")
         self.mkdir("target_ROI")
+        self.target_roi_img = []
         target_img = cv2.imdecode(np.fromfile(file=self.setting["target_filepath"], dtype=np.uint8), cv2.IMREAD_COLOR)
         for i, target_x_y_w_h in enumerate(self.target_roi):
             x, y, w, h = target_x_y_w_h
+            self.target_roi_img.append(target_img[y: y+h, x:x+w])
             cv2.imwrite("target_ROI/{}.jpg".format(i+1), target_img[y: y+h, x:x+w])
         
         # csv data
@@ -169,7 +172,10 @@ class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
         self.show_info()
         self.setup()
         print(self.setting["method"])
-        if self.setting["method"] == "glabel search":
+        if self.setting["method"] == "global search":
+            # hyperparams
+            self.popsize = self.setting['population size']
+            self.generations = self.setting['generations']
             self.setup_param_window_signal.emit(self.popsize, self.param_change_num, self.target_type)
             self.DE()
         elif self.setting["method"] == "local search":
@@ -181,10 +187,7 @@ class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
     def DE(self):
         # test mode 下沒改動的地方為0
         if self.TEST_MODE: self.param_value = np.zeros(self.dimensions)
-        # hyperparams
-        self.popsize = self.setting['population size']
-        self.generations = self.setting['generations']
-        self.capture_num = self.setting['capture num']
+        
         self.F = 0.7
         self.Cr = 0.5
 
@@ -705,7 +708,11 @@ class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
             if len(roi)==0: continue
             x, y, w, h = roi
             roi_img = img[y: y+h, x:x+w]
-            now_IQM.append(self.calFunc[self.target_type[i]](roi_img))
+            if self.target_type[i] == "perceptual distance":
+                v = self.calFunc[self.target_type[i]](roi_img, self.target_roi_img[i])
+            else:
+                v = self.calFunc[self.target_type[i]](roi_img)
+            now_IQM.append(v)
         
         now_IQM = np.array(now_IQM)
         return now_IQM
