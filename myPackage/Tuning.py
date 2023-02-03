@@ -691,7 +691,7 @@ class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
             self.best_score = np.round(score, 9)
             self.set_score_signal.emit(str(self.best_score))
             
-        self.bset_score_plot.update([self.best_score])
+        
 
     def measure_IQM_by_param_value(self, path, param_value):
         self.log_info_signal.emit('now param_value: {}'.format(param_value))
@@ -764,8 +764,10 @@ class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
     def cal_score_by_weight(self, now_IQM):
         if self.TEST_MODE: return np.mean(now_IQM)
         score = (np.abs(self.target_IQM-now_IQM)/self.std_IQM).dot(self.weight_IQM.T)
-        if score<self.best_score: self.best_score = score
-        self.update_best_score(self.best_score)
+        if score<self.best_score: 
+            self.best_score = score
+            self.update_best_score(self.best_score)
+        self.bset_score_plot.update([self.best_score])
         return score
 
     def mkdir(self, path):
