@@ -228,7 +228,7 @@ class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
 
     def Nelder_Mead(self):
         ##### Nelder-Mead algorithm #####
-        step = 0.2
+        step = 0.1
         max_iter = 100
         no_improve_thr = 1e-4
         no_improv_break = 10
@@ -239,7 +239,7 @@ class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
 
         # init
         self.IQMs = []
-        now_IQM = self.measure_IQM_by_param_value('log/init', self.param_value)
+        now_IQM = self.measure_IQM_by_param_value('log/init_0', self.param_value)
         self.IQMs.append(now_IQM)
         prev_best = self.cal_score_by_weight(now_IQM)
 
@@ -270,7 +270,7 @@ class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
             self.pop.append(x)
             self.fitness.append(score)
 
-            data = ["init_{}".format(i), score]
+            data = ["init_{}".format(i+1), score]
             for IQM in now_IQM: data.append(IQM)
             data.append(self.param_value.copy())
             self.csv_data.append(data)
