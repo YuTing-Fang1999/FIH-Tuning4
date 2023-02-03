@@ -1,7 +1,7 @@
 import cv2
 import os
 
-def gen_ref_noise(N):
+def gen_ref_denoise(N):
     
     for i, f in enumerate(os.listdir('Ref_Pic/capture')):
         print(f)
@@ -12,7 +12,7 @@ def gen_ref_noise(N):
         if i+1 == N: break
 
     img /= N
-    cv2.imwrite('Ref_Pic/ref_noise_{}.jpg'.format(N), (img*255).astype(int))
+    cv2.imwrite('Ref_Pic/ref_denoise_{}.jpg'.format(N), (img*255).astype(int))
 
 import kornia
 import cv2
@@ -21,7 +21,7 @@ import torch
 from torchvision.utils import save_image
 
 def gen_ref_sharpness(N):
-    img: np.ndarray = cv2.imread('Ref_Pic/ref_noise_{}.jpg'.format(N))
+    img: np.ndarray = cv2.imread('Ref_Pic/ref_denoise_{}.jpg'.format(N))
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
     data: torch.tensor = kornia.utils.image_to_tensor(img, keepdim=False)

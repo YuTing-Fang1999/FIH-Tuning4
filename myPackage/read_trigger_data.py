@@ -43,5 +43,4 @@ def read_trigger_data_c6(key_config, file_path):
         data = [float(d.replace('f','')) for d in data]
         aec_trigger_datas.append(data)
 
-    print(aec_trigger_datas)
     return aec_trigger_datas

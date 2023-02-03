@@ -22,6 +22,8 @@ from random import randrange
 import csv
 from decimal import Decimal
 import copy
+from scipy.stats import qmc
+import datetime
 
 class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
     finish_signal = pyqtSignal()
@@ -103,7 +105,6 @@ class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
         # print(self.bounds)
 
         self.param_value = np.array(self.key_data['param_value']) # 所有參數值
-        self.dimensions = len(self.param_value)
         self.param_change_idx = self.key_data['param_change_idx'] # 需要tune的參數位置
         self.param_change_num = len(self.param_change_idx) # 需要tune的參數個數
         
@@ -172,6 +173,7 @@ class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
         self.csv_data.append(data)
         self.best_csv_data.append(data)
 
+
         ##### start tuning #####
         # setup
         if not self.TEST_MODE:
@@ -193,23 +195,27 @@ class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
             self.Nelder_Mead()
         
         self.finish_signal.emit()
+        
 
     def DE(self):
         # test mode 下沒改動的地方為0
-        if self.TEST_MODE: self.param_value = np.zeros(self.dimensions)
+        if self.TEST_MODE: self.param_value = np.zeros(len(self.param_value))
         
-        self.F = 0.7
-        self.Cr = 0.5
+        self.F = 0.6
+        self.Cr = 0.4
 
         # score
         self.best_score = 1e9
         self.fitness = []  # 計算popsize個individual所產生的影像的分數
         self.IQMs = []
 
-        self.pop = np.random.random((self.popsize, self.param_change_num))
+        # Generate samples from a Latin hypercube generator
+        sampler = qmc.LatinHypercube(d=self.param_change_num)
+        self.pop = sampler.random(n=self.popsize)
+        # self.pop = np.random.random((self.popsize, self.param_change_num))
         self.pop = self.min_b + self.pop * self.diff #denorm
         self.pop = self.round_nearest(self.pop)
-        # self.log_info_signal.emit(str(self.pop))
+        self.log_info_signal.emit(str(self.pop))
         self.pop = ((self.pop-self.min_b)/self.diff) #norm
 
         # update rate
@@ -224,7 +230,7 @@ class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
 
     def Nelder_Mead(self):
         ##### Nelder-Mead algorithm #####
-        step = 0.1
+        step = 0.2
         max_iter = 100
         no_improve_thr = 1e-4
         no_improv_break = 10
@@ -696,6 +702,7 @@ class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
         self.set_score_signal.emit(str(self.best_score))
 
     def measure_IQM_by_param_value(self, path, param_value):
+        self.log_info_signal.emit('now param_value: {}'.format(param_value))
         if self.TEST_MODE: 
             return np.array([self.fobj(param_value)]*len(self.target_type))
 
@@ -815,15 +822,46 @@ class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
         self.show_info_by_key(["root", "key"], self.setting)
         self.show_info_by_key(["trigger_idx", "trigger_name"], self.setting)
 
-        self.tab_info.show_info("\n###### Differential evolution ######")
-        self.show_info_by_key(["population size","generations","capture num"], self.setting)
+        self.tab_info.show_info("\n###### Algorithm ######")
+        self.show_info_by_key(["method"], self.setting)
+
+        if self.setting["method"] == "global search":
+            self.show_info_by_key(["population size","generations","capture num"], self.setting)
+        elif self.setting["method"] == "local search":
+            self.show_info_by_key(["init_param", "capture num"], self.setting)
+
         self.show_info_by_key(["coustom_range","param_change_idx"], key_data)
         self.tab_info.show_info("{}: {}".format("param_value", self.param_value))
-
-        # self.tab_info.show_info("\n###### Mode ######")
-        # self.show_info_by_key(["TEST_MODE","PRETRAIN","TRAIN"], self.setting)
 
         self.tab_info.show_info("\n###### Project Setting ######")
         self.show_info_by_key(["platform", "project_path", "exe_path", "bin_name"], self.setting)
 
+    def finish(self):
+        now = datetime.datetime.now() # current date and time
+        dir_name = "Result_{}".format(now.strftime("%Y%m%d_%H%M"))
+        self.mkdir(dir_name)
+        print(dir_name)
 
+        # 搬移目標照片
+        for i, target in enumerate(self.target_roi):
+            src = target[0]
+            des='{}/{}'.format(dir_name, src.split('/')[-1])
+            if not os.path.exists(des):
+                shutil.copyfile(src, des)
+
+        # 搬移ROI照片
+        for i, img in enumerate(self.target_roi_img):
+            cv2.imwrite("{}/target_ROI{}.jpg".format(dir_name, i+1), img)
+
+        # 搬移前五名的照片
+        self.best_csv_data[1:] = sorted(self.best_csv_data[1:], key=lambda x: x[1])
+        for i, data in enumerate(self.best_csv_data):
+            if i>=2: # 0 1 is title target
+                src = "log/{}".format(data[0])
+                des = "{}/{}.jpg".format(dir_name, i)
+                shutil.copyfile(src, des)
+                
+        # 儲存csv
+        with open('{}/result.csv'.format(dir_name), 'w', newline='') as file:
+            writer = csv.writer(file)
+            writer.writerows(self.best_csv_data)

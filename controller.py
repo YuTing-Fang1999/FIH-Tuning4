@@ -13,7 +13,7 @@ from myPackage.read_trigger_data import read_trigger_data_c7, read_trigger_data_
 from myPackage.set_param_value import set_param_value_c7, set_param_value_c6
 from myPackage.build_and_push import build_and_push_c7, build_and_push_c6
 
-from myPackage.Ref_Pic import gen_ref_noise, gen_ref_sharpness
+from myPackage.Ref_Pic import gen_ref_denoise, gen_ref_sharpness
 
 import os
 import xml.etree.ElementTree as ET
@@ -130,7 +130,7 @@ class MainWindow_controller(QMainWindow):
         self.ui.param_page.push_and_save_block.push_to_camera_signal.connect(self.get_and_build_and_push_start)
     
     def input_param(self):
-        text, okPressed = QInputDialog.getMultiLineText(self, "參數輸入","參數\n直接複製csv的參數即可\n格式: [1 2 3]\n參數以中括號括起，以空格隔開，中括號與數字之間不能有空格", "")
+        text, okPressed = QInputDialog.getMultiLineText(self, "參數輸入","格式: 參數以中括號括起，以空格隔開，中括號與數字之間不能有空格 \nex:[1 2 3]\n直接複製csv的參數即可", "")
         if okPressed and text != '':
             param_value = json.loads(text.replace(' ', ','))
             self.ui.logger.show_info("input_param: {}".format(param_value))
@@ -179,7 +179,7 @@ class MainWindow_controller(QMainWindow):
             self.tuning.mkdir("Ref_Pic/capture")
             N=10
             if self.capture.capture(saved_path, capture_num=N):
-                gen_ref_noise(N)
+                gen_ref_denoise(N)
                 gen_ref_sharpness(N)
         else:
             self.capture.capture(saved_path, capture_num=1)
@@ -239,7 +239,6 @@ class MainWindow_controller(QMainWindow):
         file_path = self.get_file_path[self.setting["platform"]](self.setting["project_path"], key_config["file_path"])
         aec_trigger_datas = self.read_trigger_data[self.setting["platform"]](key_config, file_path)
         self.ui.param_page.trigger_selector.update_UI(aec_trigger_datas)
-        print(self.setting["trigger_idx"], root, key, file_path)
         
         self.ui.param_page.trigger_selector.setCurrentIndex(self.setting["trigger_idx"])
         # self.set_trigger_idx(self.setting["trigger_idx"])
@@ -330,6 +329,7 @@ class MainWindow_controller(QMainWindow):
         self.tuning_task.start()
 
     def finish(self):
+        self.tuning.finish()
         self.ui.logger.signal.emit("STOP")
         self.tuning.is_run = False
         self.ui.run_page.upper_part.btn_run.setText('Run')

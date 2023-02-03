@@ -58,7 +58,7 @@ class PushAndSaveBlock(QWidget):
         self.btn_push_phone_capture = QPushButton("寫入 + 推到手機 + 拍照")
         VLayout.addWidget(self.btn_push_phone_capture)
 
-        self.btn_input_param = QPushButton("使用文字輸入參數")
+        self.btn_input_param = QPushButton("使用文本框輸入參數")
         VLayout.addWidget(self.btn_input_param)
         
 
@@ -94,6 +94,7 @@ class PushAndSaveBlock(QWidget):
         self.btn_capture.setEnabled(b)
         self.btn_push_phone.setEnabled(b)
         self.btn_push_phone_capture.setEnabled(b)
+        self.btn_input_param.setEnabled(b)
 
     def do_capture(self):
         print("PushAndSaveBlock do_capture")
