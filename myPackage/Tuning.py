@@ -132,6 +132,12 @@ class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
         self.max_b = self.max_b[self.param_change_idx]
         self.diff = np.fabs(self.min_b - self.max_b)
 
+        # score
+        self.best_score = 1e9
+        self.fitness = []  # 計算popsize個individual所產生的影像的分數
+        self.IQMs = []
+        self.pop = []
+
         # 防呆
         if len(self.setting["target_type"])==0:
             self.alert_info_signal.emit("請先圈ROI", "請先圈ROI")
@@ -201,11 +207,6 @@ class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
         
         self.F = 0.6
         self.Cr = 0.4
-
-        # score
-        self.best_score = 1e9
-        self.fitness = []  # 計算popsize個individual所產生的影像的分數
-        self.IQMs = []
 
         # Generate samples from a Latin hypercube generator
         sampler = qmc.LatinHypercube(d=self.param_change_num)
@@ -312,8 +313,8 @@ class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
 
             # break after no_improv_break iterations with no improvement
             self.log_info_signal.emit('...best so far: {}'.format(best))
-            self.update_best_score(best)
-            self.bset_score_plot.update([best])
+            
+            
 
             if best < prev_best - no_improve_thr:
                 no_improv = 0
@@ -512,9 +513,6 @@ class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
                     if os.path.exists(des): os.remove(des)
                     shutil.copyfile(src, des)
 
-            if self.fitness[ind_idx] < self.best_score:
-                self.update_best_score(self.fitness[ind_idx])
-
         # 更新經由標準差後的分數
         self.update_param_window_scores_signal.emit(self.fitness)
 
@@ -618,15 +616,6 @@ class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
                     if os.path.exists(des): os.remove(des)
                     shutil.copyfile(src, des)
 
-            # 如果突變種比最優種更好
-            if f < self.best_score:
-                # 替換最優種
-                self.update_best_score(f)
-                    
-                if f==0:
-                    self.finish_signal.emit(True)
-                    sys.exit()
-
         self.bset_score_plot.update([self.best_score])
         self.hyper_param_plot.update([F, Cr])
         self.update_rate_plot.update([self.update_rate])
@@ -697,9 +686,12 @@ class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
         return False, trial, trial_denorm
 
     def update_best_score(self, score):
-        # update log score
-        self.best_score = np.round(score, 9)
-        self.set_score_signal.emit(str(self.best_score))
+        if score < self.best_score:
+            # update log score
+            self.best_score = np.round(score, 9)
+            self.set_score_signal.emit(str(self.best_score))
+            
+        self.bset_score_plot.update([self.best_score])
 
     def measure_IQM_by_param_value(self, path, param_value):
         self.log_info_signal.emit('now param_value: {}'.format(param_value))
@@ -771,7 +763,9 @@ class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
 
     def cal_score_by_weight(self, now_IQM):
         if self.TEST_MODE: return np.mean(now_IQM)
-        return (np.abs(self.target_IQM-now_IQM)/self.std_IQM).dot(self.weight_IQM.T)
+        score = (np.abs(self.target_IQM-now_IQM)/self.std_IQM).dot(self.weight_IQM.T)
+        if score<self.best_score: self.update_best_score(score)
+        return score
 
     def mkdir(self, path):
         if self.TEST_MODE: 
@@ -861,6 +855,7 @@ class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
                 src = "log/{}.jpg".format(data[0])
                 des = "{}/{}.jpg".format(dir_name, i-2)
                 shutil.copyfile(src, des)
+                data[0] = "{}.jpg".format(i-2)
                 
         # 儲存csv
         with open('{}/result.csv'.format(dir_name), 'w', newline='') as file:
