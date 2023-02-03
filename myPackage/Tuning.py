@@ -575,10 +575,10 @@ class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
         self.param_value[self.param_change_idx] = trial_denorm
 
         # mesure score
-        now_IQM = self.measure_IQM_by_param_value('log/ind{}_gne{}'.format(ind_idx, gen_idx), self.param_value)
+        now_IQM = self.measure_IQM_by_param_value('log/ind{}_gen{}'.format(ind_idx, gen_idx), self.param_value)
         f = np.around(self.cal_score_by_weight(now_IQM), 9)
 
-        data = ['ind{}_gne{}'.format(ind_idx, gen_idx), f]
+        data = ['ind{}_gen{}'.format(ind_idx, gen_idx), f]
         for IQM in now_IQM: data.append(IQM)
         data.append(self.param_value.copy())
         self.csv_data.append(data)
@@ -603,11 +603,11 @@ class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
                 self.best_csv_data[ind_idx+2] = data
                 for i in range(self.capture_num):
                     if self.capture_num==1:
-                        src_img = 'ind{}_gne{}.jpg'.format(ind_idx, gen_idx)
+                        src_img = 'ind{}_gen{}.jpg'.format(ind_idx, gen_idx)
                         des_img = '{}.jpg'.format(ind_idx) # 根據量化分數命名
                         
                     else:
-                        src_img = 'ind{}_{}_gne{}.jpg'.format(ind_idx, i, gen_idx)
+                        src_img = 'ind{}_{}_gen{}.jpg'.format(ind_idx, i, gen_idx)
                         des_img = '{}_{}.jpg'.format(ind_idx, i) # 根據量化分數命名
 
                     src='log/{}'.format(src_img)
@@ -686,10 +686,9 @@ class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
         return False, trial, trial_denorm
 
     def update_best_score(self, score):
-        if score < self.best_score:
-            # update log score
-            self.best_score = np.round(score, 9)
-            self.set_score_signal.emit(str(self.best_score))
+        # update log score
+        self.best_score = np.round(score, 9)
+        self.set_score_signal.emit(str(self.best_score))
             
         
 
