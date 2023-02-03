@@ -6,7 +6,7 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtCore import Qt, pyqtSignal, QThread
 from myPackage.Capture import Capture
-from myPackage.Tuning.Tuning import Tuning
+from myPackage.Tuning import Tuning
 from myPackage.get_file_path import get_file_path_c7, get_file_path_c6
 from myPackage.read_param_value import read_param_value_c7, read_param_value_c6
 from myPackage.read_trigger_data import read_trigger_data_c7, read_trigger_data_c6
@@ -329,7 +329,6 @@ class MainWindow_controller(QMainWindow):
         self.tuning_task.start()
 
     def finish(self):
-        self.tuning.finish()
         self.ui.logger.signal.emit("STOP")
         self.tuning.is_run = False
         self.ui.run_page.upper_part.btn_run.setText('Run')
@@ -337,6 +336,7 @@ class MainWindow_controller(QMainWindow):
         self.set_btn_enable("done")
         # self.tuning.ML.save_model()
         os.chdir(self.origin_dir)
+        self.tuning.finish()
         stop_thread(self.tuning_task)
 
     def show_param_window(self):

@@ -10,7 +10,7 @@ import sys
 sys.path.append("../..")
 
 from .ImageViewer import ImageViewer
-from myPackage.Tuning.ImageMeasurement import *
+from myPackage.ImageMeasurement import *
 
 
 class Score(QWidget):

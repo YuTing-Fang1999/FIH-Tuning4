@@ -1,10 +1,8 @@
 from PyQt5.QtWidgets import QHBoxLayout, QWidget, QMessageBox
 from PyQt5.QtCore import pyqtSignal, QThread, QObject, Qt
 
-from .HyperOptimizer import HyperOptimizer
 from .MplCanvasTiming import MplCanvasTiming
 from .ImageMeasurement import *
-from myPackage.ML.ML import ML
 
 import numpy as np
 from time import sleep
@@ -72,7 +70,7 @@ class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
         self.hyper_param_plot = MplCanvasTiming(
             self.run_page_lower_part.tab_hyper.label_plot, color=['g', 'r'], name=['F', 'Cr'], axis_name=["Generation", "HyperParam Value"]
         )
-        self.update_plot = MplCanvasTiming(
+        self.update_rate_plot = MplCanvasTiming(
             self.run_page_lower_part.tab_update.label_plot, color=['b', 'k'], name=['using ML', 'no ML'], axis_name=["Generation", "Update Rate"]
         )
 
@@ -470,7 +468,8 @@ class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
             self.param_value[self.param_change_idx] = trial_denorm
             # measure score
             now_IQM = self.measure_IQM_by_param_value('log/ind{}_init'.format(ind_idx), self.param_value)
-            self.fitness.append(np.around(self.cal_score_by_weight(now_IQM), 9))
+            score = np.around(self.cal_score_by_weight(now_IQM), 9)
+            self.fitness.append(score)
             self.IQMs.append(now_IQM)
 
             # update_param_window
@@ -478,7 +477,7 @@ class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
             
             if not self.TEST_MODE:
                 # csv data
-                data = ["ind{}_init".format(ind_idx), 0]
+                data = ["ind{}_init".format(ind_idx), score]
                 for IQM in now_IQM: data.append(IQM)
                 data.append(self.param_value.copy())
                 self.csv_data.append(data)
@@ -630,6 +629,7 @@ class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
 
         self.bset_score_plot.update([self.best_score])
         self.hyper_param_plot.update([F, Cr])
+        self.update_rate_plot.update([self.update_rate])
 
     def is_bad_trial(self, trial_denorm):
         for rule in self.rule:
@@ -785,7 +785,7 @@ class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
         # reset plot
         self.bset_score_plot.reset()
         self.hyper_param_plot.reset()
-        self.update_plot.reset()
+        self.update_rate_plot.reset()
 
         # reset label
         self.set_score_signal.emit("#")
@@ -853,15 +853,16 @@ class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
         for i, img in enumerate(self.target_roi_img):
             cv2.imwrite("{}/target_ROI{}.jpg".format(dir_name, i+1), img)
 
-        # 搬移前五名的照片
-        self.best_csv_data[1:] = sorted(self.best_csv_data[1:], key=lambda x: x[1])
-        for i, data in enumerate(self.best_csv_data):
+        # 搬移前五名的照片 
+        self.csv_data[1:] = sorted(self.csv_data[1:], key=lambda x: x[1])
+        self.csv_data = self.csv_data[:6]
+        for i, data in enumerate(self.csv_data):
             if i>=2: # 0 1 is title target
-                src = "log/{}".format(data[0])
-                des = "{}/{}.jpg".format(dir_name, i)
+                src = "log/{}.jpg".format(data[0])
+                des = "{}/{}.jpg".format(dir_name, i-2)
                 shutil.copyfile(src, des)
                 
         # 儲存csv
         with open('{}/result.csv'.format(dir_name), 'w', newline='') as file:
             writer = csv.writer(file)
-            writer.writerows(self.best_csv_data)
+            writer.writerows(self.csv_data)
