@@ -130,15 +130,19 @@ class MainWindow_controller(QMainWindow):
         self.ui.param_page.push_and_save_block.push_to_camera_signal.connect(self.get_and_build_and_push_start)
     
     def input_param(self):
-        text, okPressed = QInputDialog.getMultiLineText(self, "參數輸入","格式: 參數以中括號括起，以空格隔開，中括號與數字之間不能有空格 \nex:[1 2 3]\n直接複製csv的參數即可", "")
+        text, okPressed = QInputDialog.getMultiLineText(self, "參數輸入","直接複製csv的參數即可\nex:[0.06 0.37 0.18 0.5  0.2  0.06 0.2  0.05]", "")
         if okPressed and text != '':
-            param_value = json.loads(text.replace(' ', ','))
+            text = text.replace('[','')
+            text = text.replace(']','')
+            text = text.split()
+            param_value = [ float(t) for t in text ]
             self.ui.logger.show_info("input_param: {}".format(param_value))
             self.ui.param_page.param_modify_block.update_param_value(param_value)
 
     def get_and_set_param_value_slot(self):
         key_config = self.config[self.setting["platform"]][self.setting["root"]][self.setting["key"]]
         param_value = self.ui.param_page.param_modify_block.get_param_value()
+        self.setting["trigger_idx"] = self.ui.param_page.trigger_selector.currentIndex()
         self.ui.logger.show_info('write {} to {}/{}, trigger_idx: {}'.format(param_value, self.setting["root"] ,self.setting["key"], self.setting["trigger_idx"]))
         file_path = self.get_file_path[self.setting["platform"]](self.setting["project_path"], key_config["file_path"])
         self.set_param_value[self.setting["platform"]](self.setting["key"], key_config, file_path, self.setting["trigger_idx"], param_value)
@@ -307,7 +311,7 @@ class MainWindow_controller(QMainWindow):
 
     def run(self):
         if self.tuning.is_run:
-            self.finish()
+            self.finish(True)
         else:
             self.start()
 
@@ -328,7 +332,7 @@ class MainWindow_controller(QMainWindow):
         # 執行該子執行緒
         self.tuning_task.start()
 
-    def finish(self):
+    def finish(self, success):
         self.ui.logger.signal.emit("STOP")
         self.tuning.is_run = False
         self.ui.run_page.upper_part.btn_run.setText('Run')
@@ -336,7 +340,7 @@ class MainWindow_controller(QMainWindow):
         self.set_btn_enable("done")
         # self.tuning.ML.save_model()
         os.chdir(self.origin_dir)
-        self.tuning.finish()
+        if success: self.tuning.finish()
         stop_thread(self.tuning_task)
 
     def show_param_window(self):

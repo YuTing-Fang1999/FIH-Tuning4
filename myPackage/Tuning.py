@@ -24,7 +24,7 @@ from scipy.stats import qmc
 import datetime
 
 class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
-    finish_signal = pyqtSignal()
+    finish_signal = pyqtSignal(bool)
     # UI
     set_score_signal = pyqtSignal(str)
     set_generation_signal = pyqtSignal(str)
@@ -135,12 +135,12 @@ class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
         # 防呆
         if len(self.setting["target_type"])==0:
             self.alert_info_signal.emit("請先圈ROI", "請先圈ROI")
-            self.finish_signal.emit()
+            self.finish_signal.emit(False)
             return
 
         if self.param_change_num==0:
             self.alert_info_signal.emit("請選擇要調的參數", "目前參數沒打勾\n請打勾要調的參數")
-            self.finish_signal.emit()
+            self.finish_signal.emit(False)
             return
 
         self.show_info()
@@ -192,7 +192,7 @@ class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
             self.setup_param_window_signal.emit(self.param_change_num+1, self.param_change_num, self.target_type)
             self.Nelder_Mead()
         
-        self.finish_signal.emit()
+        self.finish_signal.emit(True)
         
 
     def DE(self):
@@ -624,7 +624,7 @@ class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
                 self.update_best_score(f)
                     
                 if f==0:
-                    self.finish_signal.emit()
+                    self.finish_signal.emit(True)
                     sys.exit()
 
         self.bset_score_plot.update([self.best_score])
