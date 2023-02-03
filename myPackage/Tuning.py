@@ -764,7 +764,8 @@ class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
     def cal_score_by_weight(self, now_IQM):
         if self.TEST_MODE: return np.mean(now_IQM)
         score = (np.abs(self.target_IQM-now_IQM)/self.std_IQM).dot(self.weight_IQM.T)
-        if score<self.best_score: self.update_best_score(score)
+        if score<self.best_score: self.best_score = score
+        self.update_best_score(self.best_score)
         return score
 
     def mkdir(self, path):
@@ -853,9 +854,9 @@ class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
         for i, data in enumerate(self.csv_data):
             if i>=2: # 0 1 is title target
                 src = "log/{}.jpg".format(data[0])
-                des = "{}/{}.jpg".format(dir_name, i-2)
+                des = "{}/{}.jpg".format(dir_name, i-1)
                 shutil.copyfile(src, des)
-                data[0] = "{}.jpg".format(i-2)
+                data[0] = "{}.jpg".format(i-1)
                 
         # 儲存csv
         with open('{}/result.csv'.format(dir_name), 'w', newline='') as file:
