@@ -419,7 +419,7 @@ class MainWindow_controller(QMainWindow):
         if 'target_type' in setting and len(setting["target_type"])>0:
             assert len(setting["my_rois"]) == len(setting["target_type"])
             for i in range(len(setting["target_type"])):
-                self.ui.ROI_page.add_to_table(setting["target_type"][i], setting["target_score"][i], setting["target_weight"][i])
+                self.ui.ROI_page.add_to_table(setting["target_type"][i], setting["target_score_min"][i], setting["target_score_max"][i], setting["target_weight"][i])
         
         if "target_filepath" in self.setting and self.setting["target_filepath"] != "./":
             if os.path.exists(self.setting["target_filepath"]):
@@ -466,12 +466,14 @@ class MainWindow_controller(QMainWindow):
         assert len(self.setting["my_rois"]) == self.ui.ROI_page.table.rowCount()
 
         self.setting["target_type"] = []
-        self.setting["target_score"] = []
+        self.setting["target_score_min"] = []
+        self.setting["target_score_max"] = []
         self.setting["target_weight"] = []
         for i in range(self.ui.ROI_page.table.rowCount()):
             self.setting["target_type"].append(self.ui.ROI_page.table.cellWidget(i, 0).text())
-            self.setting["target_score"].append(float(self.ui.ROI_page.table.cellWidget(i, 1).text()))
-            self.setting["target_weight"].append(float(self.ui.ROI_page.table.cellWidget(i, 2).text()))
+            self.setting["target_score_min"].append(float(self.ui.ROI_page.table.cellWidget(i, 1).text()))
+            self.setting["target_score_max"].append(float(self.ui.ROI_page.table.cellWidget(i, 2).text()))
+            self.setting["target_weight"].append(float(self.ui.ROI_page.table.cellWidget(i, 3).text()))
 
         ##### param_page #####
         self.setting['method'] = self.ui.param_page.hyper_setting_block.method_selector.currentText()

@@ -60,7 +60,7 @@ class ROI_Page(QWidget):
         self.measure_window = MeasureWindow()
 
         self.table = QTableWidget()
-        self.headers = ["type", "IQM", "weight", "刪除紐"]
+        self.headers = ["type", "min", "max", "weight", "刪除紐"]
         self.table.setColumnCount(len(self.headers))   ##设置列数
         self.table.setHorizontalHeaderLabels(self.headers)
 
@@ -112,7 +112,7 @@ class ROI_Page(QWidget):
             "QWidget{background-color: rgb(66, 66, 66);}"
             "QLabel{font-size:12pt; font-family:微軟正黑體; color:white;}"
             "QPushButton{font-size:12pt; font-family:微軟正黑體; background-color:rgb(255, 170, 0);}"
-            "QLineEdit{font-size:12pt; font-family:微軟正黑體; background-color: rgb(255, 255, 255); border: 2px solid gray; border-radius: 5px;}")
+            "QLineEdit{font-size:12pt; font-family:微軟正黑體; background-color: rgb(255, 255, 255); border: 2px solid gray; border-radius: 5px; width: 90px}")
 
     def setup_controller(self):
         self.ROI_select_window.to_main_window_signal.connect(self.select_ROI)
@@ -131,15 +131,15 @@ class ROI_Page(QWidget):
     def select_ROI(self, my_x_y_w_h, target_x_y_w_h, target_filepath):
         self.measure_window.measure_target(my_x_y_w_h, target_x_y_w_h, target_filepath)
 
-    def set_target_score(self, my_x_y_w_h, target_x_y_w_h, target_type, target_score, target_filepath):
+    def set_target_score(self, my_x_y_w_h, target_x_y_w_h, target_type, target_score_min, target_score_max, target_filepath):
         
         for i in range(len(target_type)):
-            self.add_to_table(target_type[i], target_score[i], 1)
+            self.add_to_table(target_type[i], target_score_min[i], target_score_max[i], 1)
             self.target_rois.append([target_filepath, target_x_y_w_h])
             self.my_rois.append(my_x_y_w_h)
             self.draw_ROI(self.my_rois)
 
-    def add_to_table(self, target_type, target_score, target_weight):
+    def add_to_table(self, target_type, target_score_min, target_score_max, target_weight):
 
         row = self.table.rowCount()
         self.table.setRowCount(row + 1)
@@ -148,11 +148,13 @@ class ROI_Page(QWidget):
         label.setAlignment(Qt.AlignCenter)
         self.table.setCellWidget(row,0,label)
 
-        self.table.setCellWidget(row,1,QLineEdit(str(target_score)))
+        self.table.setCellWidget(row,1,QLineEdit(str(target_score_min)))
 
-        self.table.setCellWidget(row,2,QLineEdit(str(target_weight)))
+        self.table.setCellWidget(row,2,QLineEdit(str(target_score_max)))
 
-        self.table.setCellWidget(row,3,DeleteBtn(self.table, self))
+        self.table.setCellWidget(row,3,QLineEdit(str(target_weight)))
+
+        self.table.setCellWidget(row,4,DeleteBtn(self.table, self))
 
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
         self.table.horizontalHeader().setStretchLastSection(True)

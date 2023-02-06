@@ -120,7 +120,8 @@ class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
             self.setting["target_weight"]=[1]*len(self.setting["target_type"])
 
         self.target_type = np.array(self.setting["target_type"])
-        self.target_IQM = np.array(self.setting["target_score"])
+        self.target_IQM_min = np.array(self.setting["target_score_min"])
+        self.target_IQM_max = np.array(self.setting["target_score_max"])
         self.weight_IQM = np.array(self.setting["target_weight"])
         self.target_num = len(self.target_type)
         # 暫時設成1
@@ -172,7 +173,8 @@ class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
 
         # csv target
         data = ["target", 0]
-        for IQM in self.target_IQM: data.append(IQM)
+        for i in len(self.target_IQM_min): 
+            data.append([self.target_IQM_min[i], self.target_IQM_max[i]])
         title.append("")
         self.csv_data.append(data)
         self.best_csv_data.append(data)
@@ -762,7 +764,10 @@ class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
 
     def cal_score_by_weight(self, now_IQM):
         if self.TEST_MODE: return np.mean(now_IQM)
-        score = (np.abs(self.target_IQM-now_IQM)/self.std_IQM).dot(self.weight_IQM.T)
+        dif_min = np.abs(self.target_IQM_min-now_IQM)
+        dif_max = np.abs(self.target_IQM_max-now_IQM)
+        dif = np.array([dif_min, dif_max]).min(axis=0)
+        score = (dif/self.std_IQM).dot(self.weight_IQM.T)
         if score<self.best_score: 
             self.best_score = score
             self.update_best_score(self.best_score)
