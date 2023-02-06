@@ -5,16 +5,19 @@ from scipy.signal import convolve2d
 
 def get_sharpness(img):
     img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    return np.sqrt(cv2.Laplacian(img, cv2.CV_64F).var())
+    v = np.sqrt(cv2.Laplacian(img, cv2.CV_64F).var())
+    return np.round(v, 4)
 
 def get_chroma_stdev(img):
     img_yuv = cv2.cvtColor(img, cv2.COLOR_BGR2YUV)
     y, u, v = cv2.split(img_yuv)
-    return u.std()+v.std()
+    return np.round(u.std()+v.std(), 4)
 
-# Reference: J. Immerkær, “Fast Noise Variance Estimation”, Computer Vision and Image Understanding, Vol. 64, No. 2, pp. 300-302, Sep. 1996 [PDF]
 def get_luma_stdev(img):
     img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    return np.round(img.std(), 4) # 直接以標準差return
+
+    # Reference: J. Immerkær, “Fast Noise Variance Estimation”, Computer Vision and Image Understanding, Vol. 64, No. 2, pp. 300-302, Sep. 1996 [PDF]
     H, W = img.shape
 
     M = [[1, -2, 1],
@@ -24,7 +27,7 @@ def get_luma_stdev(img):
     sigma = np.sum(np.sum(np.absolute(convolve2d(img, M))))
     sigma = sigma * math.sqrt(0.5 * math.pi) / (6 * (W-2) * (H-2))
 
-    return sigma
+    return np.round(sigma, 4)
 
 def get_average_gnorm(img):
         # https://stackoverflow.com/questions/6646371/detect-which-image-is-sharper
@@ -34,18 +37,6 @@ def get_average_gnorm(img):
         gnorm = np.sqrt(gx**2 + gy**2)
         sharpness = np.average(gnorm)
         return np.round(sharpness, 4)
-
-def get_luma_sobel_stdev(img):
-    I = img.copy()
-    sobelx = cv2.Sobel(I, cv2.CV_16S, 1, 0)  # x方向梯度 ksize默認為3x3
-    sobely = cv2.Sobel(I, cv2.CV_16S, 0, 1)  # y方向梯度
-    var = np.mean(sobelx**2 + sobely**2)
-    return np.round(np.sqrt(var), 4)
-
-def get_type_name_and_tip():
-    type_name = ["luma stdev", "luma sobel stdev", "chroma stdev", "sharpness", "DL accutance", "perceptual distance"]
-    tip = [""]*len(type_name)
-    return type_name, tip
 
 import lpips
 import torch
@@ -77,10 +68,21 @@ def get_perceptual_distance(img0, img1):
 def get_cal_func():
     calFunc = {}
     calFunc["luma stdev"] = get_luma_stdev
-    calFunc["luma sobel stdev"] = get_luma_sobel_stdev
     calFunc["chroma stdev"] = get_chroma_stdev
     calFunc["sharpness"] = get_sharpness
     calFunc["DL accutance"] = get_average_gnorm
     calFunc["perceptual distance"] = get_perceptual_distance
 
     return calFunc
+
+def get_calFunc_typeName_tip():
+    calFunc = get_cal_func()
+    type_name = list(calFunc.keys())
+    tip = [
+        "亮度雜訊\n將RGB轉成黑白後，取標準差，適合用於平坦區",
+        "色彩雜訊\n將RGB轉成YUV後，取U和V的標準差相加，適合用於平坦區",
+        "以二階微分的Laplacian算子取標準差，適合用於edge邊緣",
+        "使用averge norm 近似 DXO Dead Leaves accutance數值，適合用於紋路",
+        "近似人眼感知做量化，數值越小代表與參考相片越像，圈哪裡都可以"
+    ]
+    return calFunc, type_name, tip

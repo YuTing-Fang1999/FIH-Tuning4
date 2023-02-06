@@ -54,8 +54,7 @@ class MeasureWindow(QWidget):
     def __init__(self):
         super().__init__()  
 
-        self.calFunc = get_cal_func()
-        self.type_name, self.tip = get_type_name_and_tip()
+        self.calFunc, self.type_name, self.tip = get_calFunc_typeName_tip()
         self.setup_UI()
         
     def setup_UI(self):

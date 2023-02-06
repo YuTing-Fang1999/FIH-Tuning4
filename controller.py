@@ -185,10 +185,14 @@ class MainWindow_controller(QMainWindow):
             if self.capture.capture(saved_path, capture_num=N):
                 gen_ref_denoise(N)
                 gen_ref_sharpness(N)
+
+        elif (saved_path=="capture"):
+            if self.capture.capture(saved_path, capture_num=1):
+                self.set_ROI_page_photo_signal.emit()
+
         else:
             self.capture.capture(saved_path, capture_num=1)
 
-        if(saved_path=="capture"): self.set_ROI_page_photo_signal.emit()
         self.set_btn_enable("done")
         
     def set_platform_UI(self):
@@ -405,8 +409,8 @@ class MainWindow_controller(QMainWindow):
             setting["bin_name"] = ""
 
         ##### ROI_page #####
-        if os.path.exists('./capture.jpg'):
-            self.ui.ROI_page.set_photo('./capture.jpg')
+        if os.path.exists('capture.jpg'):
+            self.ui.ROI_page.set_photo('capture.jpg')
             if "my_rois" in setting:
                 self.ui.ROI_page.target_rois = setting["target_rois"]
                 self.ui.ROI_page.my_rois = setting["my_rois"]
