@@ -226,6 +226,8 @@ class ROI_Select_Window(QtWidgets.QWidget):
         self.filename = ""
 
         # Widgets
+        self.my_label = QtWidgets.QLabel("")
+        self.target_label = QtWidgets.QLabel("")
         self.my_viewer = ImageViewer(self, 0)
         self.target_viewer = ImageViewer(self, 1)
         self.label = QtWidgets.QLabel(self)
@@ -233,12 +235,20 @@ class ROI_Select_Window(QtWidgets.QWidget):
         self.label.setText('按下Ctrl可以使用滑鼠縮放拖曳\n左圖為拍攝的照片，右圖為目標照片\n對左邊的圖操作可同時操作兩張圖')
         self.btn_OK = QtWidgets.QPushButton(self)
         self.btn_OK.setText("OK")
+
         # Arrange layout
         VBlayout = QtWidgets.QVBoxLayout(self)
         HBlayout = QtWidgets.QHBoxLayout()
 
-        HBlayout.addWidget(self.my_viewer)
-        HBlayout.addWidget(self.target_viewer)
+        VBlayout_viewer = QtWidgets.QVBoxLayout()
+        VBlayout_viewer.addWidget(self.my_label)
+        VBlayout_viewer.addWidget(self.my_viewer)
+        HBlayout.addLayout(VBlayout_viewer)
+
+        VBlayout_viewer = QtWidgets.QVBoxLayout()
+        VBlayout_viewer.addWidget(self.target_label)
+        VBlayout_viewer.addWidget(self.target_viewer)
+        HBlayout.addLayout(VBlayout_viewer)
 
         VBlayout.addWidget(self.label)
         VBlayout.addLayout(HBlayout)
@@ -261,24 +271,6 @@ class ROI_Select_Window(QtWidgets.QWidget):
         if event.key() == Qt.Key_Control:
             self.my_viewer.setDragMode(self.target_viewer.RubberBandDrag)
             self.target_viewer.setDragMode(self.target_viewer.RubberBandDrag)
-
-    # def open_img(self):
-    #     filepath, filetype = QFileDialog.getOpenFileName(
-    #         self,
-    #         "選擇target照片",
-    #         self.filefolder,  # start path
-    #         'Image Files(*.png *.jpg *.jpeg *.bmp)'
-    #     )
-
-    #     if filepath == '': return
-
-    #     self.filepath = filepath
-    #     self.filefolder = '/'.join(filepath.split('/')[:-1])
-    #     self.filename = filepath.split('/')[-1]
-        
-    #     # load img
-    #     img = cv2.imdecode(np.fromfile(file=filepath, dtype=np.uint8), cv2.IMREAD_COLOR)
-    #     self.target_viewer.set_img(img)
 
     def select_ROI(self):
         # if len(self.target_viewer.img)==0: self.open_img()

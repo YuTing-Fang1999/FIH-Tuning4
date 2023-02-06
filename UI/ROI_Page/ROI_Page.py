@@ -200,6 +200,7 @@ class ROI_Page(QWidget):
         
         # load img
         img = cv2.imdecode(np.fromfile(file=filepath, dtype=np.uint8), cv2.IMREAD_COLOR)
+        self.ROI_select_window.target_label.setText(self.filename)
         self.ROI_select_window.target_viewer.set_img(img)
         self.ROI_select_window.filepath = filepath
         self.target_filepath = filepath
@@ -208,6 +209,7 @@ class ROI_Page(QWidget):
         img = cv2.imread(img_name)
         self.img = img
         self.label_img.setPhoto(img)
+        self.ROI_select_window.my_label.setText(img_name)
         self.ROI_select_window.my_viewer.set_img(img)
         self.draw_ROI(self.my_rois)
 

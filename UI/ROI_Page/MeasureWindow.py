@@ -36,13 +36,16 @@ class Score(QWidget):
             gridLayout.addWidget(label, j, 2)
 
 class Block(QWidget):
-    def __init__(self, name, tip):
+    def __init__(self, name, tip, title):
         super().__init__()  
 
         self.VLayout = QVBoxLayout(self)
 
+        self.label_title = QLabel(title)
         self.img_block = ImageViewer()
         self.img_block.setAlignment(Qt.AlignCenter)
+
+        self.VLayout.addWidget(self.label_title)
         self.VLayout.addWidget(self.img_block)
 
         self.score_block = Score(name, tip)
@@ -65,10 +68,11 @@ class MeasureWindow(QWidget):
         self.VLayout.setContentsMargins(50, 50, 50, 50)
 
         HLayout = QHBoxLayout()
-        self.my_block = Block(self.type_name, self.tip)
-        self.target_block = Block(self.type_name, self.tip)
+        self.my_block = Block(self.type_name, self.tip, "capture.jpg")
+        self.target_block = Block(self.type_name, self.tip, "")
         HLayout.addWidget(self.my_block)
         HLayout.addWidget(self.target_block)
+
         self.VLayout.addLayout(HLayout)
 
         for i in range(len(self.type_name)):
@@ -88,6 +92,7 @@ class MeasureWindow(QWidget):
         self.my_x_y_w_h = my_x_y_w_h
         self.target_x_y_w_h = target_x_y_w_h
         self.target_filepath = target_filepath
+        self.target_block.label_title.setText(target_filepath.split('/')[-1])
         # load img
         my_img = cv2.imdecode(np.fromfile(file="capture.jpg", dtype=np.uint8), cv2.IMREAD_COLOR)
         target_img = cv2.imdecode(np.fromfile(file=target_filepath, dtype=np.uint8), cv2.IMREAD_COLOR)

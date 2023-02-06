@@ -421,10 +421,10 @@ class MainWindow_controller(QMainWindow):
             for i in range(len(setting["target_type"])):
                 self.ui.ROI_page.add_to_table(setting["target_type"][i], setting["target_score"][i], setting["target_weight"][i])
         
-        # if "target_filepath" in self.setting and self.setting["target_filepath"] != "./":
-        #     if os.path.exists(self.setting["target_filepath"]):
-        #         self.ui.ROI_page.target_filepath = self.setting["target_filepath"]
-        #         self.ui.ROI_page.set_target_img(self.setting["target_filepath"])
+        if "target_filepath" in self.setting and self.setting["target_filepath"] != "./":
+            if os.path.exists(self.setting["target_filepath"]):
+                self.ui.ROI_page.target_filepath = self.setting["target_filepath"]
+                self.ui.ROI_page.set_target_img(self.setting["target_filepath"])
 
         ##### param_page #####
         if "root" in self.setting:
