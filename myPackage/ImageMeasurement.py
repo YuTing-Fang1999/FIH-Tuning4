@@ -47,6 +47,7 @@ if(torch.cuda.is_available()):
 	loss_fn.cuda()
 
 def get_perceptual_distance(img0, img1):
+    # assert img0.shape == img1.shape
     h = min(img0.shape[0], img1.shape[0])
     w = min(img0.shape[1], img1.shape[1])
 

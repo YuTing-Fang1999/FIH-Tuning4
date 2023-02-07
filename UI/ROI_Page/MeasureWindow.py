@@ -103,25 +103,38 @@ class MeasureWindow(QWidget):
         x, y, w, h = target_x_y_w_h
         target_roi_img = target_img[y: y+h, x:x+w]
 
+        h0, w0, c0 = my_roi_img.shape
+        h1, w1, c1 = target_roi_img.shape
+
+        # resize by h
+        if h0>h1:
+            my_roi_img = cv2.resize(my_roi_img, (int(w0*(h1/h0)), int(h0*(h1/h0))), interpolation=cv2.INTER_AREA)
+        elif h1>h0:
+            target_roi_img = cv2.resize(target_roi_img, (int(w1*(h0/h1)), int(h1*(h0/h1))), interpolation=cv2.INTER_AREA)
+
+        h = min(my_roi_img.shape[0], target_roi_img.shape[0])
+        w = min(my_roi_img.shape[1], target_roi_img.shape[1])
+
+        my_roi_img = my_roi_img[:h, :w, :]
+        target_roi_img = target_roi_img[:h, :w, :]
+
         self.my_block.img_block.setPhoto(my_roi_img)
         self.target_block.img_block.setPhoto(target_roi_img)
 
         self.score_value = []
         for i in range(len(self.type_name)):
             if self.type_name[i] == "perceptual distance":
+
                 v_target = self.calFunc[self.type_name[i]](target_roi_img, target_roi_img)
                 v_my = self.calFunc[self.type_name[i]](my_roi_img, target_roi_img)
             else:
                 v_target = self.calFunc[self.type_name[i]](target_roi_img)
                 v_my = self.calFunc[self.type_name[i]](my_roi_img)
 
-            v_target = np.around(v_target, 5)
             self.target_block.score_block.label_score[i].setText(str(v_target))
-            v_my = np.around(v_my, 5)
             self.my_block.score_block.label_score[i].setText(str(v_my))
             
             self.score_value.append(v_target)
-
 
         self.showMaximized()
 
