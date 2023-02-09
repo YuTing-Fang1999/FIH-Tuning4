@@ -223,9 +223,10 @@ class ROI_Page(QWidget):
             self.btn_add_ROI_item.setEnabled(False)
 
             for row in range(self.table.rowCount()): 
-                _item = self.table.cellWidget(row, 3) 
-                if _item:            
-                    _item.setEnabled(False)
+                for col in range(self.table.columnCount()): 
+                    _item = self.table.cellWidget(row, col) 
+                    if _item:            
+                        _item.setEnabled(False)
         
         elif case=="push" or case=="capture":
             self.btn_capture.setEnabled(False)
@@ -240,9 +241,10 @@ class ROI_Page(QWidget):
             self.btn_add_ROI_item.setEnabled(True)
 
             for row in range(self.table.rowCount()): 
-                _item = self.table.cellWidget(row, 3) 
-                if _item:            
-                    _item.setEnabled(True)
+                for col in range(self.table.columnCount()): 
+                    _item = self.table.cellWidget(row, col) 
+                    if _item:            
+                        _item.setEnabled(True)
 
 
 if __name__ == '__main__':

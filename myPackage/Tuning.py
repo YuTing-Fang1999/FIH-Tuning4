@@ -173,8 +173,10 @@ class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
             elif h0>h1:
                 self.resize_scale[i] = h1/h0
 
-            self.target_roi_img.append(target_roi_img)
-            cv2.imwrite("target_ROI/target_ROI{}.jpg".format(i+1), target_roi_img)
+            
+            name = target[0].split('/')[-1].split('.')[0]
+            self.target_roi_img.append([name, target_roi_img])
+            cv2.imwrite("target_ROI/target_ROI{}_{}.jpg".format(i+1, name), target_roi_img)
         
         # csv data
         title = ["name", "score"]
@@ -185,7 +187,7 @@ class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
 
         # csv target
         data = ["target", 0]
-        for i in len(self.target_IQM_min): 
+        for i in range(len(self.target_IQM_min)): 
             data.append([self.target_IQM_min[i], self.target_IQM_max[i]])
         title.append("")
         self.csv_data.append(data)
@@ -771,7 +773,7 @@ class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
                 roi_img = cv2.resize(roi_img, (int(w*self.resize_scale[i]), int(h*self.resize_scale[i])), interpolation=cv2.INTER_AREA)
 
             if self.target_type[i] == "perceptual distance":
-                v = self.calFunc[self.target_type[i]](roi_img, self.target_roi_img[i])
+                v = self.calFunc[self.target_type[i]](roi_img, self.target_roi_img[i][1])
             else:
                 v = self.calFunc[self.target_type[i]](roi_img)
             now_IQM.append(v)
@@ -834,7 +836,7 @@ class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
         key_data = self.setting[self.setting["root"]][self.setting["key"]]
 
         self.tab_info.show_info("\n###### Target ######")
-        self.show_info_by_key(["target_type", "target_score", "target_weight"], self.setting)
+        self.show_info_by_key(["target_type", "target_score_min", "target_score_max", "target_weight"], self.setting)
 
         self.tab_info.show_info("\n###### Tuning Block ######")
         self.show_info_by_key(["root", "key"], self.setting)
@@ -858,7 +860,6 @@ class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
         now = datetime.datetime.now() # current date and time
         dir_name = "Result_{}".format(now.strftime("%Y%m%d_%H%M"))
         self.mkdir(dir_name)
-        print(dir_name)
 
         # 搬移目標照片
         for i, target in enumerate(self.target_rois):
@@ -868,8 +869,8 @@ class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
                 shutil.copyfile(src, des)
 
         # 搬移ROI照片
-        for i, img in enumerate(self.target_roi_img):
-            cv2.imwrite("{}/target_ROI{}.jpg".format(dir_name, i+1), img)
+        for i, target in enumerate(self.target_roi_img):
+            cv2.imwrite("{}/target_ROI{}_{}.jpg".format(dir_name, i+1, target[0]), target[1])
 
         # 搬移前五名的照片 
         self.csv_data[1:] = sorted(self.csv_data[1:], key=lambda x: x[1])
