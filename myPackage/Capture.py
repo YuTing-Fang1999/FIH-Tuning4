@@ -20,13 +20,12 @@ class Capture(QWidget):
         self.logger = None
         self.setting = None
 
-    def capture(self, path = "", focus_time = 3, save_time = 1, capture_num = 1):
+    def capture(self, path = "", focus_time = 5, save_time = 1, capture_num = 1):
 
         rc = self.open_camera()
         if rc!=0: return False
-        # sleep(focus_time) #wait for auto focus
+        #wait for auto focus
         self.log_info_signal.emit('wait for auto focus')
-        # sleep(focus_time)
         for i in range(focus_time):
             self.log_info_signal.emit(str(i))
             sleep(1)

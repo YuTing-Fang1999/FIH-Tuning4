@@ -54,6 +54,11 @@ def get_perceptual_distance(img0, img1):
     img0 = img0[:h, :w]
     img1 = img1[:h, :w]
 
+    # cv2.imshow("img0", img0)
+    # cv2.imshow("img1", img1)
+    # cv2.waitKey(0)
+    # cv2.destroyAllWindows()
+
     # Load images
     img0 = lpips.im2tensor(img0) # RGB image from [-1,1]
     img1 = lpips.im2tensor(img1)
