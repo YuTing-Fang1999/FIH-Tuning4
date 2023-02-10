@@ -182,6 +182,7 @@ class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
         title = ["name", "score"]
         for t in self.target_type: title.append(t)
         title.append(self.key_config["param_names"])
+        title.append("weight")
         self.csv_data = [title]
         self.best_csv_data = [title]
 
@@ -189,7 +190,8 @@ class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
         data = ["target", 0]
         for i in range(len(self.target_IQM_min)): 
             data.append([self.target_IQM_min[i], self.target_IQM_max[i]])
-        title.append("")
+        data.append("")
+        data.append(self.weight_IQM)
         self.csv_data.append(data)
         self.best_csv_data.append(data)
 
@@ -886,3 +888,5 @@ class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
         with open('{}/result.csv'.format(dir_name), 'w', newline='') as file:
             writer = csv.writer(file)
             writer.writerows(self.csv_data)
+
+        self.run_cmd_signal.emit('adb shell input keyevent = KEYCODE_HOME')

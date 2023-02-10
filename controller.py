@@ -514,6 +514,8 @@ class MainWindow_controller(QMainWindow):
                         self.setting[name] = ""
                 else:
                     self.setting[name] = int(self.ui.param_page.hyper_setting_block.lineEdits_hyper_setting[i].text())
+        if self.setting["population size"]<=4:
+            self.alert_info("「參數設定」頁面的population size設定錯誤", "「參數設定」頁面的population size須設定大於4的數值")
         
         self.setting['saved_dir_name'] = self.ui.param_page.push_and_save_block.lineEdits_dir_name.text()
         self.setting['saved_img_name'] = self.ui.param_page.push_and_save_block.lineEdits_img_name.text()

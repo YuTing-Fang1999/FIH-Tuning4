@@ -33,7 +33,7 @@ class Capture(QWidget):
         # capture
         for i in range(capture_num):
             self.press_camera_button()
-            sleep(0.05) 
+            sleep(0.03) 
         sleep(save_time) #wait for save photo
         if self.setting["platform"] == "c6project": sleep(0.5)
         self.transfer_img(path, capture_num)

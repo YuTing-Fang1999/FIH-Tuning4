@@ -76,7 +76,7 @@ def set_param_value_c6(key, key_config, file_path, trigger_idx, param_value):
             idx+=1
         else:
             for i in range(param_node.get(param_idx).length()):
-                param_node.get(param_idx).get(i).text = str(param_value[idx])
+                param_node.get(param_idx).get(i).text = "{0:.6f}".format(param_value[idx]) # 小數浮點6位
                 idx+=1
 
     with open(file_path, 'w', encoding='cp1252') as f:
