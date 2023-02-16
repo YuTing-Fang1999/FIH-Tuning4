@@ -64,7 +64,7 @@ class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
 
         # plot
         self.tab_info = self.run_page_lower_part.tab_info
-        self.bset_score_plot = MplCanvasTiming(
+        self.best_score_plot = MplCanvasTiming(
             self.run_page_lower_part.tab_score.label_plot, color=['r', 'g'], name=['score'], axis_name=["Generation", "Score"]
         )
         self.hyper_param_plot = MplCanvasTiming(
@@ -224,8 +224,8 @@ class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
         # test mode 下沒改動的地方為0
         if self.TEST_MODE: self.param_value = np.zeros(len(self.param_value))
         
-        self.F = 0.6
-        self.Cr = 0.4
+        self.F = 0.7
+        self.Cr = 0.5
 
         # Generate samples from a Latin hypercube generator
         sampler = qmc.LatinHypercube(d=self.param_change_num)
@@ -235,6 +235,8 @@ class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
         self.pop = self.round_nearest(self.pop)
         self.log_info_signal.emit(str(self.pop))
         self.pop = ((self.pop-self.min_b)/self.diff) #norm
+        no_improv = 0
+        no_improv_break = 5
 
         # update rate
         self.update_count=0
@@ -245,6 +247,18 @@ class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
         # Do Differential Evolution
         for gen_idx in range(self.generations):
             self.run_DE_for_a_generation(gen_idx)
+
+            print('\nupdate_rate',self.update_rate)
+            if self.update_rate == 0: no_improv+=1
+            else: no_improv=0
+            
+            if self.best_score<1e-4:
+                self.log_info_signal.emit('finish')
+                self.finish_signal.emit(True)
+            if no_improv >= no_improv_break:
+                self.log_info_signal.emit('stop because no improvement')
+                self.finish_signal.emit(True)
+                
 
     def Nelder_Mead(self):
         ##### Nelder-Mead algorithm #####
@@ -574,22 +588,10 @@ class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
         self.set_individual_signal.emit(str(ind_idx))
 
         is_return, trial, trial_denorm = self.generate_parameters(ind_idx, F, Cr)
-        if(is_return): return
+        if(is_return): 
+            self.log_info_signal.emit('return because no generate new parameters')
+            return
         
-        if self.is_rule:
-            bad_time = 0
-            while(self.is_bad_trial(trial_denorm)):
-                is_return, trial, trial_denorm = self.generate_parameters(ind_idx, F, Cr)
-                if(is_return or bad_time>20): 
-                    self.log_info_signal.emit("\nreturn because good trial not found\n")
-                    return
-                bad_time+=1
-        
-            self.log_info_signal.emit("\nbad_time: {} trial_denorm: {}\n".format(bad_time, trial_denorm))
-
-        # update param_value
-        self.param_value[self.param_change_idx] = trial_denorm
-            
         # update param_value
         self.param_value[self.param_change_idx] = trial_denorm
 
@@ -601,6 +603,9 @@ class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
         for IQM in now_IQM: data.append(IQM)
         data.append(self.param_value.copy())
         self.csv_data.append(data)
+
+        # self.log_info_signal.emit('pre score: {}'.format(self.fitness[ind_idx]))
+        # self.log_info_signal.emit('now score: {}'.format(f))
 
         # 如果突變種比原本的更好
         if f < self.fitness[ind_idx]:
@@ -635,31 +640,30 @@ class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
                     if os.path.exists(des): os.remove(des)
                     shutil.copyfile(src, des)
 
-        self.bset_score_plot.update([self.best_score])
         self.hyper_param_plot.update([F, Cr])
         self.update_rate_plot.update([self.update_rate])
 
-    def is_bad_trial(self, trial_denorm):
-        for rule in self.rule:
-            val = 0
-            p0 = trial_denorm[rule["idx"][0]]
-            p1 = trial_denorm[rule["idx"][1]]
+    # def is_bad_trial(self, trial_denorm):
+    #     for rule in self.rule:
+    #         val = 0
+    #         p0 = trial_denorm[rule["idx"][0]]
+    #         p1 = trial_denorm[rule["idx"][1]]
 
-            for op in rule["op"]:
-                if op == '-': val = p0-p1
-                elif op == 'abs': val = np.abs(val)
+    #         for op in rule["op"]:
+    #             if op == '-': val = p0-p1
+    #             elif op == 'abs': val = np.abs(val)
 
-            if not (rule["between"][0]<=val and val<=rule["between"][1]):
-                if val>rule["between"][1]: dif = -(val-rule["between"][1])
-                if val<rule["between"][0]: dif = (val-rule["between"][0])
-                p = math.exp(dif/self.T) # 差越大p越小，越容易傳True
-                if p<np.random.uniform(0.5, 0.8): 
-                    self.log_info_signal.emit("bad param")
-                    return True # p越小越容易比他大
+    #         if not (rule["between"][0]<=val and val<=rule["between"][1]):
+    #             if val>rule["between"][1]: dif = -(val-rule["between"][1])
+    #             if val<rule["between"][0]: dif = (val-rule["between"][0])
+    #             p = math.exp(dif/self.T) # 差越大p越小，越容易傳True
+    #             if p<np.random.uniform(0.5, 0.8): 
+    #                 self.log_info_signal.emit("bad param")
+    #                 return True # p越小越容易比他大
         
-        self.T *= self.T_rate
+    #     self.T *= self.T_rate
         
-        return False
+    #     return False
 
     def round_nearest(self, x):
         return np.around(self.step*np.around(x/self.step), 2)
@@ -667,12 +671,13 @@ class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
     def generate_parameters(self, ind_idx, F, Cr):
         mutant = None
         times = 0
-        while (not isinstance(mutant, np.ndarray) or ((trial_denorm-now_denorm)<=1e-5).all()):
+        while (not isinstance(mutant, np.ndarray) or (np.abs(trial_denorm-now_denorm)<=1e-5).all()):
             Cr+=0.1
             # select all pop except j
             idxs = [idx for idx in range(self.popsize) if idx != ind_idx]
             # random select three pop except j
             a, b, c = self.pop[np.random.choice(idxs, 3, replace=False)]
+            # self.log_info_signal.emit('{}, {}'.format(b, c))
             vec = F * (b - c)
             # Mutation
             mutant = np.clip(a + vec, 0, 1)
@@ -784,15 +789,17 @@ class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
         return now_IQM
 
     def cal_score_by_weight(self, now_IQM):
-        if self.TEST_MODE: return np.mean(now_IQM)
-        dif_min = np.abs(self.target_IQM_min-now_IQM)
-        dif_max = np.abs(self.target_IQM_max-now_IQM)
-        dif = np.array([dif_min, dif_max]).min(axis=0)
-        score = (dif/self.std_IQM).dot(self.weight_IQM.T)
+        if self.TEST_MODE: 
+            score = np.mean(now_IQM)
+        else:
+            dif_min = np.abs(self.target_IQM_min-now_IQM)
+            dif_max = np.abs(self.target_IQM_max-now_IQM)
+            dif = np.array([dif_min, dif_max]).min(axis=0)
+            score = (dif/self.std_IQM).dot(self.weight_IQM.T)
         if score<self.best_score: 
             self.best_score = score
             self.update_best_score(self.best_score)
-        self.bset_score_plot.update([self.best_score])
+        self.best_score_plot.update([self.best_score])
         return score
 
     def mkdir(self, path):
@@ -805,7 +812,7 @@ class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
 
     def setup(self):
         # reset plot
-        self.bset_score_plot.reset()
+        self.best_score_plot.reset()
         self.hyper_param_plot.reset()
         self.update_rate_plot.reset()
 
@@ -859,6 +866,7 @@ class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
         self.show_info_by_key(["platform", "project_path", "exe_path", "bin_name"], self.setting)
 
     def finish(self):
+        if self.TEST_MODE: return
         now = datetime.datetime.now() # current date and time
         dir_name = "Result_{}".format(now.strftime("%Y%m%d_%H%M"))
         self.mkdir(dir_name)
