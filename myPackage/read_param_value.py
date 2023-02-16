@@ -60,13 +60,13 @@ def read_param_value_c6(key, key_config, file_path, trigger_idx):
 
     param_value = []
     for param_idx in key_config["param_node"]:
-        if key == "ASF" and param_idx==9: # 只需更改乘號後面的數值，取第一個值就好
-                t = ''.join(param_node.get(param_idx).get(i).text)
-                t = t[t.find('*')+1:]
-                param_value.append(float(t.replace('f','')))
-        else:
-            for i in range(param_node.get(param_idx).length()):
-                param_value.append(float(''.join(param_node.get(param_idx).get(i).text).replace('f','')))
+        # if key == "ASF" and param_idx==9: # 只需更改乘號後面的數值，取第一個值就好
+        #         t = ''.join(param_node.get(param_idx).get(i).text)
+        #         t = t[t.find('*')+1:]
+        #         param_value.append(float(t.replace('f','')))
+        # else:
+        for i in range(param_node.get(param_idx).length()):
+            param_value.append(float(''.join(param_node.get(param_idx).get(i).text).replace('f','')))
 
     # print('read_param_value_c6', param_value)
     return param_value

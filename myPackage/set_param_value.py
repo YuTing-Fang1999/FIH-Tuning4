@@ -68,16 +68,16 @@ def set_param_value_c6(key, key_config, file_path, trigger_idx, param_value):
 
     idx = 0
     for param_idx in key_config["param_node"]:
-        if key == "ASF" and param_idx==9: # 只需更改乘號後面的數值
-            for i in range(param_node.get(param_idx).length()):
-                t = param_node.get(param_idx).get(i).text
-                t[''.join(t).find('*')+1:] = str(param_value[idx])
-                param_node.get(param_idx).get(i).text = t
+        # if key == "ASF" and param_idx==9: # 只需更改乘號後面的數值
+        #     for i in range(param_node.get(param_idx).length()):
+        #         t = param_node.get(param_idx).get(i).text
+        #         t[''.join(t).find('*')+1:] = str(param_value[idx])
+        #         param_node.get(param_idx).get(i).text = t
+        #     idx+=1
+        # else:
+        for i in range(param_node.get(param_idx).length()):
+            param_node.get(param_idx).get(i).text = "{0:.6f}f".format(param_value[idx]) # 小數浮點6位
             idx+=1
-        else:
-            for i in range(param_node.get(param_idx).length()):
-                param_node.get(param_idx).get(i).text = "{0:.6f}".format(param_value[idx]) # 小數浮點6位
-                idx+=1
 
     with open(file_path, 'w', encoding='cp1252') as f:
         f.write(''.join(arr_phaser.reconstruct()))
