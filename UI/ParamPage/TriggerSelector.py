@@ -14,7 +14,8 @@ class TriggerSelector(QComboBox):
         self.setStyleSheet("font-size:12pt; font-family:微軟正黑體; background-color: rgb(255, 255, 255);")
 
     def update_UI(self, aec_trigger_datas):
-        item_names = ["lux_idx from {} to {},  gain from {} to {}".format(d[0], d[1], d[2], d[3])for d in aec_trigger_datas]
+        # lux_idx from {} to {},  d[0], d[1], 
+        item_names = ["Gain {:>2}x (gain start {} end {})".format(int(d[2]), d[2], d[3]) for d in aec_trigger_datas]
         self.clear()
         self.addItems(item_names) # -> set_trigger_idx 0
         
