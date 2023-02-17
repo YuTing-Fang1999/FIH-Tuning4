@@ -45,7 +45,7 @@ class Array_Parser():
             i+=1
         
     def is_char(self, c):
-        return c not in ['  ',' ',',','\n','{','}']
+        return c not in [' ',',','\n','{','}','\t']
 
         # print(self.pos_arr)
     def get(self, idx):
