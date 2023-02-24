@@ -156,8 +156,8 @@ class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
         # save target ROI
         if os.path.exists("target_ROI"): shutil.rmtree("target_ROI")
         self.mkdir("target_ROI")
-        self.target_roi_img = []
-        self.resize_scale = np.ones(len(self.target_rois))
+        self.target_roi_imgs = []
+        # self.resize_scale = np.ones(len(self.target_rois))
 
         for i, target in enumerate(self.target_rois):
             
@@ -168,14 +168,14 @@ class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
 
             target_roi_img = target_img[y1: y1+h1, x1:x1+w1]
 
-            if h1>h0:
-                target_roi_img = cv2.resize(target_roi_img, (int(w1*(h0/h1)), int(h1*(h0/h1))), interpolation=cv2.INTER_AREA)
-            elif h0>h1:
-                self.resize_scale[i] = h1/h0
+            # if h1>h0:
+            #     target_roi_img = cv2.resize(target_roi_img, (int(w1*(h0/h1)), int(h1*(h0/h1))), interpolation=cv2.INTER_AREA)
+            # elif h0>h1:
+            #     self.resize_scale[i] = h1/h0
 
             
             name = target[0].split('/')[-1].split('.')[0]
-            self.target_roi_img.append([name, target_roi_img])
+            self.target_roi_imgs.append([name, target_roi_img])
             cv2.imwrite("target_ROI/target_ROI{}_{}.jpg".format(i+1, name), target_roi_img)
         
         # csv data
@@ -774,15 +774,13 @@ class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
         for i, roi in enumerate(self.my_rois):
             if len(roi)==0: continue
             x, y, w, h = roi
-            roi_img = img[y: y+h, x:x+w]
-
-            if self.resize_scale[i]!=1:
-                roi_img = cv2.resize(roi_img, (int(w*self.resize_scale[i]), int(h*self.resize_scale[i])), interpolation=cv2.INTER_AREA)
+            my_roi_img = img[y: y+h, x:x+w]
 
             if self.target_type[i] == "perceptual distance":
-                v = self.calFunc[self.target_type[i]](roi_img, self.target_roi_img[i][1])
+                my_roi_img_resize, target_roi_img_resize = resize_by_h(my_roi_img, self.target_roi_imgs[i][1])
+                v = self.calFunc[self.target_type[i]](my_roi_img_resize, target_roi_img_resize )
             else:
-                v = self.calFunc[self.target_type[i]](roi_img)
+                v = self.calFunc[self.target_type[i]](my_roi_img)
             now_IQM.append(v)
         
         now_IQM = np.array(now_IQM)
@@ -879,7 +877,7 @@ class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
                 shutil.copyfile(src, des)
 
         # 搬移ROI照片
-        for i, target in enumerate(self.target_roi_img):
+        for i, target in enumerate(self.target_roi_imgs):
             cv2.imwrite("{}/target_ROI{}_{}.jpg".format(dir_name, i+1, target[0]), target[1])
 
         # 搬移前五名的照片 
@@ -898,3 +896,5 @@ class Tuning(QObject):  # 要繼承QWidget才能用pyqtSignal!!
             writer.writerows(self.csv_data)
 
         self.run_cmd_signal.emit('adb shell input keyevent = KEYCODE_HOME')
+
+    
